@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"sort"
 )
 
@@ -325,6 +327,14 @@ type ScoreMove struct {
 	move  Move
 }
 
+func NewSearcher() *Searcher {
+	return &Searcher{
+		tp_score: make(map[PDR]Entry),
+		tp_move:  make(map[Position]Move),
+		nodes:    0,
+	}
+}
+
 func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 	self.nodes += 1
 	depth = max(depth, 0)
@@ -489,6 +499,9 @@ func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
 }
 
 func main() {
+	reader := bufio.NewReader(os.Stdin)
+	searcher := NewSearcher()
+
 	var initial_board Board
 	copy(initial_board[:], []Piece(initial))
 
@@ -503,9 +516,57 @@ func main() {
 
 	for true {
 		pos.print()
+
 		if pos.score <= -MATE_LOWER {
 			fmt.Printf("You lost\n")
 			return
 		}
+
+		fmt.Printf("Your move: ")
+		text, _ := reader.ReadString('\n')
+
+		if len(text) < 4 {
+			continue
+		}
+
+		tbytes := []byte(text)
+		m0 := int(tbytes[0] - 'a')
+		m1 := int(tbytes[1] - '1')
+		m2 := int(tbytes[2] - 'a')
+		m3 := int(tbytes[3] - '1')
+
+		if m0 < 0 || m0 > 7 || m1 < 0 || m1 > 7 || m2 < 0 || m2 > 7 || m3 < 0 || m3 > 7 {
+			continue
+		}
+
+		move := Move{A1 + m0*E + m1*N, A1 + m2*E + m3*N}
+		valid := false
+
+		pos.gen_moves(func(m Move) bool {
+			if m == move {
+				valid = true
+				return true
+			}
+			return false
+		})
+
+		if !valid {
+			continue
+		}
+
+		pos = pos.move(move)
+		rotated := pos.rotate()
+		rotated.print()
+
+		if pos.score <= -MATE_LOWER {
+			fmt.Printf("You won!\n")
+			return
+		}
+
+		searcher.search(pos, func(r SearchResult) bool {
+			fmt.Printf("depth=%d score=%d move=?\n", r.depth, r.score)
+			return false
+		})
+
 	}
 }
