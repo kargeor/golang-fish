@@ -42,7 +42,6 @@ const TABLE_SIZE = 1e7
 
 const QS_LIMIT = 219
 const EVAL_ROUGHNESS = 13
-const DRAW_TEST = true
 
 type Position struct {
 	board  Board
@@ -288,7 +287,6 @@ type PDR struct {
 type Searcher struct {
 	tp_score map[PDR]Entry
 	tp_move  map[Position]Move
-	history  map[Position]bool
 	nodes    int
 }
 
@@ -298,30 +296,24 @@ type ScoreMove struct {
 	move  Move
 }
 
-func (self *Searcher) bound(pdr PDR, gamma int) int {
+func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 	self.nodes += 1
-	depth := max(pdr.depth, 0)
+	depth = max(depth, 0)
 
-	if pdr.pos.score <= -MATE_LOWER {
+	if pos.score <= -MATE_LOWER {
 		return -MATE_UPPER
 	}
 
-	if DRAW_TEST {
-		if !(pdr.root) && self.history[pdr.pos] {
-			return 0
-		}
-	}
-
-	entry, ok := self.tp_score[PDR{pdr.pos, depth, pdr.root}]
-	if !ok {
+	entry, entry_found := self.tp_score[PDR{pos, depth, root}]
+	if !entry_found {
 		entry = Entry{-MATE_UPPER, MATE_UPPER}
 	}
 
 	if entry.lower >= gamma {
-		if !(pdr.root) {
+		if !root {
 			return entry.lower
 		}
-		if _, found := self.tp_move[pdr.pos]; found {
+		if _, found := self.tp_move[pos]; found {
 			return entry.lower
 		}
 	}
@@ -331,27 +323,41 @@ func (self *Searcher) bound(pdr PDR, gamma int) int {
 	}
 
 	moves := func(yield chan ScoreMove) {
-		if depth > 0 && !(pdr.root) {
-			if pdr.pos.board.contains('R') ||
-				pdr.pos.board.contains('B') ||
-				pdr.pos.board.contains('N') ||
-				pdr.pos.board.contains('Q') {
-				yield <- ScoreMove{valid: false, score: -self.bound(PDR{pdr.pos.nullmove(), depth - 3, false}, 1-gamma)}
+		if depth > 0 && !root {
+			if pos.board.contains('R') ||
+				pos.board.contains('B') ||
+				pos.board.contains('N') ||
+				pos.board.contains('Q') {
+				yield <- ScoreMove{
+					valid: false,
+					score: -self.bound(pos.nullmove(), 1-gamma, depth-3, false),
+				}
 			}
 		}
 
 		if depth == 0 {
-			yield <- ScoreMove{valid: false, score: pdr.pos.score}
+			yield <- ScoreMove{
+				valid: false,
+				score: pos.score,
+			}
 		}
 
-		killer, killer_found := self.tp_move[pdr.pos]
-		if killer_found && (depth > 0 || pdr.pos.value(killer) >= QS_LIMIT) {
-			yield <- ScoreMove{valid: true, move: killer, score: -self.bound(PDR{pdr.pos.move(killer), depth - 1, false}, 1-gamma)}
+		killer, killer_found := self.tp_move[pos]
+		if killer_found && (depth > 0 || pos.value(killer) >= QS_LIMIT) {
+			yield <- ScoreMove{
+				valid: true,
+				move:  killer,
+				score: -self.bound(pos.move(killer), 1-gamma, depth-1, false),
+			}
 		}
 
-		for _, move := range pdr.pos.sorted_moves() {
-			if depth > 0 || pdr.pos.value(move) >= QS_LIMIT {
-				yield <- ScoreMove{valid: true, move: move, score: -self.bound(PDR{pdr.pos.move(move), depth - 1, false}, 1-gamma)}
+		for _, move := range pos.sorted_moves() {
+			if depth > 0 || pos.value(move) >= QS_LIMIT {
+				yield <- ScoreMove{
+					valid: true,
+					move:  move,
+					score: -self.bound(pos.move(move), 1-gamma, depth-1, false),
+				}
 			}
 		}
 
@@ -370,9 +376,9 @@ func (self *Searcher) bound(pdr PDR, gamma int) int {
 			}
 
 			if scoremove.valid {
-				self.tp_move[pdr.pos] = scoremove.move
+				self.tp_move[pos] = scoremove.move
 			} else {
-				delete(self.tp_move, pdr.pos)
+				delete(self.tp_move, pos)
 			}
 		}
 	}
@@ -389,11 +395,11 @@ func (self *Searcher) bound(pdr PDR, gamma int) int {
 	}
 
 	if best >= gamma {
-		self.tp_score[PDR{pdr.pos, depth, pdr.root}] = Entry{best, entry.upper}
+		self.tp_score[PDR{pos, depth, root}] = Entry{best, entry.upper}
 	}
 
 	if best < gamma {
-		self.tp_score[PDR{pdr.pos, depth, pdr.root}] = Entry{entry.lower, best}
+		self.tp_score[PDR{pos, depth, root}] = Entry{entry.lower, best}
 	}
 
 	return best
