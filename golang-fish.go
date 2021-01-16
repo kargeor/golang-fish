@@ -96,6 +96,20 @@ func max(x, y int) int {
 	return y
 }
 
+func (self *Position) print() {
+	line := 8
+
+	for i := A8; i <= H1; i += S {
+		fmt.Printf("  %d ", line)
+		for j := 0; j < 8; j++ {
+			fmt.Printf("%c ", self.board[i+j])
+		}
+		fmt.Printf("\n")
+		line--
+	}
+	fmt.Printf("    a b c d e f g h\n\n")
+}
+
 func (self *Position) gen_moves(yield func(m Move) bool) {
 	for i, p := range self.board {
 		if !(p.isupper()) {
@@ -441,6 +455,57 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 	return best
 }
 
+type SearchResult struct {
+	depth int
+	move  Move
+	score int
+}
+
+func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
+	self.nodes = 0
+
+	for depth := 1; depth < 1000; depth++ {
+		lower, upper := -MATE_UPPER, MATE_UPPER
+		for lower < upper-EVAL_ROUGHNESS {
+			gamma := (lower + upper + 1) / 2
+			score := self.bound(pos, gamma, depth, true)
+			if score >= gamma {
+				lower = score
+			} else {
+				upper = score
+			}
+		}
+
+		self.bound(pos, lower, depth, true)
+
+		if yield(SearchResult{
+			depth: depth,
+			move:  self.tp_move[pos],
+			score: self.tp_score[PDR{pos, depth, true}].lower,
+		}) {
+			return
+		}
+	}
+}
+
 func main() {
-	fmt.Println(pst)
+	var initial_board Board
+	copy(initial_board[:], []Piece(initial))
+
+	pos := Position{
+		board: initial_board,
+		score: 0,
+		wc:    [2]bool{true, true},
+		bc:    [2]bool{true, true},
+		ep:    0,
+		kp:    0,
+	}
+
+	for true {
+		pos.print()
+		if pos.score <= -MATE_LOWER {
+			fmt.Printf("You lost\n")
+			return
+		}
+	}
 }
