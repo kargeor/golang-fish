@@ -96,7 +96,7 @@ func max(x, y int) int {
 	return y
 }
 
-func (self *Position) gen_moves(yield chan Move) {
+func (self *Position) gen_moves(yield func(m Move) bool) {
 	for i, p := range self.board {
 		if !(p.isupper()) {
 			continue
@@ -120,37 +120,52 @@ func (self *Position) gen_moves(yield chan Move) {
 					break
 				}
 
-				yield <- Move{i, j}
+				if yield(Move{i, j}) {
+					return
+				}
 
 				if q.islower() || p == 'P' || p == 'N' || p == 'K' {
 					break
 				}
 
 				if i == A1 && self.board[j+E] == 'K' && self.wc[0] {
-					yield <- Move{j + E, j + W}
+					if yield(Move{j + E, j + W}) {
+						return
+					}
 				}
 
 				if i == H1 && self.board[j+W] == 'K' && self.wc[1] {
-					yield <- Move{j + W, j + E}
+					if yield(Move{j + W, j + E}) {
+						return
+					}
 				}
 			}
 		}
 	}
-	close(yield)
 }
 
 func (self *Position) sorted_moves() []Move {
 	var result []Move
-	c := make(chan Move)
-
-	go self.gen_moves(c)
-
-	for m := range c {
+	self.gen_moves(func(m Move) bool {
 		result = append(result, m)
-	}
+		return false
+	})
 
 	sort.Slice(result, func(i, j int) bool {
 		return self.value(result[i]) > self.value(result[j])
+	})
+
+	return result
+}
+
+func (self *Position) is_dead() bool {
+	result := false
+	self.gen_moves(func(m Move) bool {
+		if self.value(m) >= MATE_LOWER {
+			result = true
+			return true
+		}
+		return false
 	})
 
 	return result
@@ -322,72 +337,93 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 		return entry.upper
 	}
 
-	moves := func(yield chan ScoreMove) {
+	moves := func(yield func(sm ScoreMove) bool) {
 		if depth > 0 && !root {
 			if pos.board.contains('R') ||
 				pos.board.contains('B') ||
 				pos.board.contains('N') ||
 				pos.board.contains('Q') {
-				yield <- ScoreMove{
+				if yield(ScoreMove{
 					valid: false,
 					score: -self.bound(pos.nullmove(), 1-gamma, depth-3, false),
+				}) {
+					return
 				}
 			}
 		}
 
 		if depth == 0 {
-			yield <- ScoreMove{
+			if yield(ScoreMove{
 				valid: false,
 				score: pos.score,
+			}) {
+				return
 			}
 		}
 
 		killer, killer_found := self.tp_move[pos]
 		if killer_found && (depth > 0 || pos.value(killer) >= QS_LIMIT) {
-			yield <- ScoreMove{
+			if yield(ScoreMove{
 				valid: true,
 				move:  killer,
 				score: -self.bound(pos.move(killer), 1-gamma, depth-1, false),
+			}) {
+				return
 			}
 		}
 
 		for _, move := range pos.sorted_moves() {
 			if depth > 0 || pos.value(move) >= QS_LIMIT {
-				yield <- ScoreMove{
+				if yield(ScoreMove{
 					valid: true,
 					move:  move,
 					score: -self.bound(pos.move(move), 1-gamma, depth-1, false),
+				}) {
+					return
 				}
 			}
 		}
-
-		close(yield)
 	}
 
 	best := -MATE_UPPER
-	c := make(chan ScoreMove)
-	go moves(c)
-
-	for scoremove := range c {
-		best = max(best, scoremove.score)
+	moves(func(sm ScoreMove) bool {
+		best = max(best, sm.score)
 		if best >= gamma {
 			if len(self.tp_move) > TABLE_SIZE {
 				self.tp_move = make(map[Position]Move)
 			}
 
-			if scoremove.valid {
-				self.tp_move[pos] = scoremove.move
+			if sm.valid {
+				self.tp_move[pos] = sm.move
 			} else {
 				delete(self.tp_move, pos)
 			}
+
+			return true
 		}
-	}
+
+		return false
+	})
 
 	if best < gamma && best < 0 && depth > 0 {
-		// is_dead = lambda pos: any(pos.value(m) >= MATE_LOWER for m in pos.gen_moves())
-		// if all(is_dead(pos.move(m)) for m in pos.gen_moves()):
-		// 		in_check = is_dead(pos.nullmove())
-		// 		best = -MATE_UPPER if in_check else 0
+		all_is_dead := true
+		pos.gen_moves(func(m Move) bool {
+			pos_move := pos.move(m)
+			if !(pos_move.is_dead()) {
+				all_is_dead = false
+				return true
+			}
+			return false
+		})
+		if all_is_dead {
+			pos_nullmove := pos.nullmove()
+			in_check := pos_nullmove.is_dead()
+			if in_check {
+				best = -MATE_UPPER
+			} else {
+				best = 0
+			}
+		}
 	}
 
 	if len(self.tp_score) > TABLE_SIZE {
@@ -403,7 +439,6 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 	}
 
 	return best
-
 }
 
 func main() {
