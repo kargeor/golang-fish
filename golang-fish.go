@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"time"
 )
 
 type IntArray []int
@@ -498,6 +499,22 @@ func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
 	}
 }
 
+func (m Move) String() string {
+	from := m[0] - A8
+	from1 := from % 10
+	from2 := from / 10
+
+	to := m[1] - A8
+	to1 := to % 10
+	to2 := to / 10
+
+	return fmt.Sprintf("%c%d->%c%d", from1+'a', 8-from2, to1+'a', 8-to2)
+}
+
+func (m Move) rotate() Move {
+	return Move{119 - m[0], 119 - m[1]}
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	searcher := NewSearcher()
@@ -554,6 +571,8 @@ func main() {
 			continue
 		}
 
+		fmt.Printf("Your move = %s\n", move)
+
 		pos = pos.move(move)
 		rotated := pos.rotate()
 		rotated.print()
@@ -563,10 +582,21 @@ func main() {
 			return
 		}
 
+		start := time.Now()
+		var bestResult SearchResult
 		searcher.search(pos, func(r SearchResult) bool {
-			fmt.Printf("depth=%d score=%d move=?\n", r.depth, r.score)
-			return false
+			elapsed := time.Since(start)
+			fmt.Printf("(%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate())
+			bestResult = r
+			return r.depth >= 8
 		})
 
+		if bestResult.score == MATE_UPPER {
+			fmt.Printf("Checkmate!\n")
+		}
+
+		fmt.Printf("\nMy Move: depth=%d score=%d move=[%s]\n\n", bestResult.depth, bestResult.score, bestResult.move.rotate())
+
+		pos = pos.move(bestResult.move)
 	}
 }
