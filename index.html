@@ -1,0 +1,77 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <script src="wasm_exec.js"></script>
+  <script>
+    const go = new Go();
+    WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject).then((result) => {
+      go.run(result.instance);
+    });
+  </script>
+  <style>
+    *, *:before, *:after {
+      box-sizing: border-box;
+    }
+    body {
+      background-color: blanchedalmond;
+      text-align: center;
+      user-select: none;
+    }
+    #chessboard {
+      margin: 8px;
+    }
+    #chessboard div div {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 42px;
+      width: 64px;
+      height: 64px;
+      cursor: pointer;
+    }
+    #chessboard div:nth-child(odd) div:nth-child(even), #chessboard div:nth-child(even) div:nth-child(odd) {
+      background-color: saddlebrown;
+    }
+    #chessboard div:nth-child(even) div:nth-child(even), #chessboard div:nth-child(odd) div:nth-child(odd) {
+      background-color: wheat;
+    }
+    button {
+      background-color: navy;
+      color: white;
+      font-weight: bold;
+      outline: none;
+    }
+    #logbox {
+      width: 512px;
+      height: 128px;
+      border: 1px solid black;
+      margin: 12px auto;
+      font-family: monospace;
+      font-size: 10px;
+      text-align: left;
+      padding: 4px;
+    }
+    #chessboard .selected::after {
+      position: absolute;
+      content: '';
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      border: 1px solid white;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chessboard"></div>
+  <button id="playW">Play White vs Engine</button>
+  <button id="playB">Play Black vs Engine</button>
+  <button id="undoMove">Undo Move</button>
+  <div id="logbox">
+    Click a square to select a piece, then click to select where to move.
+  </div>
+</body>
+
+</html>
