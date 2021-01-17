@@ -1,3 +1,4 @@
 golang-fish
 *.prof
+main.wasm
 
