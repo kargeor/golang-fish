@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"regexp"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -262,7 +264,7 @@ func (self *Position) gen_moves(yield func(m Move) bool) {
 }
 
 func (self *Position) sorted_moves() []Move {
-	var result []Move
+	result := make([]Move, 0, 128)
 	self.gen_moves(func(m Move) bool {
 		result = append(result, m)
 		return false
@@ -579,7 +581,9 @@ func (self *Searcher) bound(pos *Position, gamma int, depth int, root bool) int 
 			}
 		}
 
-		for _, move := range pos.sorted_moves() {
+		sorted_moves := pos.sorted_moves()
+		for i := 0; i < len(sorted_moves); i++ {
+			move := sorted_moves[i]
 			if depth > 0 || pos.value(move) >= SETTING_QS_LIMIT {
 				if yield(ScoreMove{
 					valid: true,
@@ -721,7 +725,19 @@ func parseMove(str string) (Move, bool) {
 
 func main() {
 	interactiveFlagPtr := flag.Bool("i", false, "interactive mode (default is uci)")
+	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+
+		fmt.Printf("**CPU Profile Active**\n")
+	}
 
 	reader := bufio.NewReader(os.Stdin)
 	searcher := NewSearcher()
@@ -738,7 +754,10 @@ func main() {
 			}
 
 			fmt.Printf("Your move: ")
-			text, _ := reader.ReadString('\n')
+			text := "a2a4" // used for profiling
+			if *cpuprofile == "" {
+				text, _ = reader.ReadString('\n')
+			}
 
 			move, move_parse_valid := parseMove(text)
 			if !move_parse_valid {
@@ -775,7 +794,7 @@ func main() {
 				elapsed := time.Since(start)
 				fmt.Printf("(%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate())
 				bestResult = r
-				return r.depth >= 8
+				return r.depth >= 9
 			})
 
 			if bestResult.score == MATE_UPPER {
@@ -785,6 +804,11 @@ func main() {
 			fmt.Printf("\nMy Move: depth=%d score=%d move=[%s]\n\n", bestResult.depth, bestResult.score, bestResult.move.rotate())
 
 			pos = pos.move(bestResult.move)
+
+			if *cpuprofile != "" {
+				// just do on move for profiling
+				return
+			}
 		}
 	} else {
 		white_turn := true
