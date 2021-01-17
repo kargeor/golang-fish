@@ -263,20 +263,6 @@ func (self *Position) gen_moves(yield func(m Move) bool) {
 	}
 }
 
-func (self *Position) sorted_moves() []Move {
-	result := make([]Move, 0, 128)
-	self.gen_moves(func(m Move) bool {
-		result = append(result, m)
-		return false
-	})
-
-	sort.Slice(result, func(i, j int) bool {
-		return self.value(result[i]) > self.value(result[j])
-	})
-
-	return result
-}
-
 func (self *Position) is_dead() bool {
 	result := false
 	self.gen_moves(func(m Move) bool {
@@ -581,7 +567,16 @@ func (self *Searcher) bound(pos *Position, gamma int, depth int, root bool) int 
 			}
 		}
 
-		sorted_moves := pos.sorted_moves()
+		sorted_moves := make([]Move, 0, 64)
+		pos.gen_moves(func(m Move) bool {
+			sorted_moves = append(sorted_moves, m)
+			return false
+		})
+
+		sort.Slice(sorted_moves, func(i, j int) bool {
+			return pos.value(sorted_moves[i]) > pos.value(sorted_moves[j])
+		})
+
 		for i := 0; i < len(sorted_moves); i++ {
 			move := sorted_moves[i]
 			if depth > 0 || pos.value(move) >= SETTING_QS_LIMIT {
