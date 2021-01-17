@@ -2,9 +2,13 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -15,6 +19,7 @@ type Board [120]Piece
 type PieceToIntArray map[Piece]IntArray
 
 const initial = "         \n         \n rnbqkbnr\n pppppppp\n ........\n ........\n ........\n ........\n PPPPPPPP\n RNBQKBNR\n         \n         \n"
+const FEN_INITIAL = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
 var pst = PieceToIntArray{
 	'P': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 178, 183, 186, 173, 202, 182, 185, 190, 0, 0, 107, 129, 121, 144, 140, 131, 144, 107, 0, 0, 83, 116, 98, 115, 114, 100, 115, 87, 0, 0, 74, 103, 110, 109, 106, 101, 100, 77, 0, 0, 78, 109, 105, 89, 90, 98, 103, 81, 0, 0, 69, 108, 93, 63, 64, 86, 103, 69, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -306,6 +311,55 @@ func (self *Position) value(move Move) int {
 	return score
 }
 
+var digit = regexp.MustCompile(`\d`)
+var slash = regexp.MustCompile(`/`)
+
+func parseFEN(fen string) Position {
+	parts := strings.Split(fen, " ")
+	board, color, castling, enpas := parts[0], parts[1], parts[2], parts[3]
+	board = digit.ReplaceAllStringFunc(board, func(str string) string {
+		count, _ := strconv.Atoi(str)
+		return strings.Repeat(".", count)
+	})
+	board = "         \n         \n " + slash.ReplaceAllString(board, "\n ") + "\n         \n         \n"
+
+	if len(board) != 120 {
+		fmt.Printf("FEN parse failed [%s]\n", fen)
+		return Position{}
+	}
+
+	var parsed_board Board
+	copy(parsed_board[:], []Piece(board))
+
+	wc := [2]bool{strings.Contains(castling, "Q"), strings.Contains(castling, "K")}
+	bc := [2]bool{strings.Contains(castling, "k"), strings.Contains(castling, "q")}
+
+	ep := 0
+	if enpas != "-" {
+		/////TODO.....
+		// ep = sunfish.parse(enpas) if enpas != '-' else 0
+	}
+
+	/////TODO.....
+	// score = sum(sunfish.pst[p][i] for i,p in enumerate(board) if p.isupper())
+	// score -= sum(sunfish.pst[p.upper()][119-i] for i,p in enumerate(board) if p.islower())
+	score := 0
+
+	pos := Position{
+		board: parsed_board,
+		score: score,
+		wc:    wc,
+		bc:    bc,
+		ep:    ep,
+		kp:    0,
+	}
+
+	if color == "w" {
+		return pos
+	}
+	return pos.rotate()
+}
+
 type Entry struct {
 	lower, upper int
 }
@@ -508,7 +562,7 @@ func (m Move) String() string {
 	to1 := to % 10
 	to2 := to / 10
 
-	return fmt.Sprintf("%c%d->%c%d", from1+'a', 8-from2, to1+'a', 8-to2)
+	return fmt.Sprintf("%c%d%c%d", from1+'a', 8-from2, to1+'a', 8-to2)
 }
 
 func (m Move) rotate() Move {
@@ -516,6 +570,9 @@ func (m Move) rotate() Move {
 }
 
 func main() {
+	interactiveFlagPtr := flag.Bool("i", false, "interactive mode (default is uci)")
+	flag.Parse()
+
 	reader := bufio.NewReader(os.Stdin)
 	searcher := NewSearcher()
 
@@ -531,72 +588,107 @@ func main() {
 		kp:    0,
 	}
 
-	for true {
-		pos.print()
+	if *interactiveFlagPtr {
+		for true {
+			pos.print()
 
-		if pos.score <= -MATE_LOWER {
-			fmt.Printf("You lost\n")
-			return
-		}
-
-		fmt.Printf("Your move: ")
-		text, _ := reader.ReadString('\n')
-
-		if len(text) < 4 {
-			continue
-		}
-
-		tbytes := []byte(text)
-		m0 := int(tbytes[0] - 'a')
-		m1 := int(tbytes[1] - '1')
-		m2 := int(tbytes[2] - 'a')
-		m3 := int(tbytes[3] - '1')
-
-		if m0 < 0 || m0 > 7 || m1 < 0 || m1 > 7 || m2 < 0 || m2 > 7 || m3 < 0 || m3 > 7 {
-			continue
-		}
-
-		move := Move{A1 + m0*E + m1*N, A1 + m2*E + m3*N}
-		valid := false
-
-		pos.gen_moves(func(m Move) bool {
-			if m == move {
-				valid = true
-				return true
+			if pos.score <= -MATE_LOWER {
+				fmt.Printf("You lost\n")
+				return
 			}
-			return false
-		})
 
-		if !valid {
-			continue
+			fmt.Printf("Your move: ")
+			text, _ := reader.ReadString('\n')
+
+			if len(text) < 4 {
+				continue
+			}
+
+			tbytes := []byte(text)
+			m0 := int(tbytes[0] - 'a')
+			m1 := int(tbytes[1] - '1')
+			m2 := int(tbytes[2] - 'a')
+			m3 := int(tbytes[3] - '1')
+
+			if m0 < 0 || m0 > 7 || m1 < 0 || m1 > 7 || m2 < 0 || m2 > 7 || m3 < 0 || m3 > 7 {
+				continue
+			}
+
+			move := Move{A1 + m0*E + m1*N, A1 + m2*E + m3*N}
+			valid := false
+
+			pos.gen_moves(func(m Move) bool {
+				if m == move {
+					valid = true
+					return true
+				}
+				return false
+			})
+
+			if !valid {
+				continue
+			}
+
+			fmt.Printf("Your move = %s\n", move)
+
+			pos = pos.move(move)
+			rotated := pos.rotate()
+			rotated.print()
+
+			if pos.score <= -MATE_LOWER {
+				fmt.Printf("You won!\n")
+				return
+			}
+
+			start := time.Now()
+			var bestResult SearchResult
+			searcher.search(pos, func(r SearchResult) bool {
+				elapsed := time.Since(start)
+				fmt.Printf("(%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate())
+				bestResult = r
+				return r.depth >= 8
+			})
+
+			if bestResult.score == MATE_UPPER {
+				fmt.Printf("Checkmate!\n")
+			}
+
+			fmt.Printf("\nMy Move: depth=%d score=%d move=[%s]\n\n", bestResult.depth, bestResult.score, bestResult.move.rotate())
+
+			pos = pos.move(bestResult.move)
 		}
+	} else {
+		for true {
+			command, _ := reader.ReadString('\n')
 
-		fmt.Printf("Your move = %s\n", move)
-
-		pos = pos.move(move)
-		rotated := pos.rotate()
-		rotated.print()
-
-		if pos.score <= -MATE_LOWER {
-			fmt.Printf("You won!\n")
-			return
+			switch {
+			case strings.HasPrefix(command, "quit"):
+				return
+			case strings.HasPrefix(command, "ucinewgame"):
+				pos = parseFEN(FEN_INITIAL)
+			case strings.HasPrefix(command, "uci"):
+				fmt.Printf("id name GoLangFish (Based on Sunfish)\n")
+				fmt.Printf("id author kargeor & Sunfish Contributors\n")
+				fmt.Printf("option name DepthLimit type spin default 8 min 1 max 32\n")
+				fmt.Printf("uciok\n")
+			case strings.HasPrefix(command, "setoption"):
+				// TODO......
+			case strings.HasPrefix(command, "isready"):
+				fmt.Printf("readyok\n")
+			case strings.HasPrefix(command, "position"):
+				// TODO......
+			case strings.HasPrefix(command, "go"):
+				start := time.Now()
+				var bestResult SearchResult
+				searcher.search(pos, func(r SearchResult) bool {
+					elapsed := time.Since(start)
+					fmt.Printf("info string (%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate())
+					bestResult = r
+					return r.depth >= 8
+				})
+				// TODO: fixxxxxx
+				fmt.Printf("bestmove %s\n", bestResult.move)
+			}
 		}
-
-		start := time.Now()
-		var bestResult SearchResult
-		searcher.search(pos, func(r SearchResult) bool {
-			elapsed := time.Since(start)
-			fmt.Printf("(%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate())
-			bestResult = r
-			return r.depth >= 8
-		})
-
-		if bestResult.score == MATE_UPPER {
-			fmt.Printf("Checkmate!\n")
-		}
-
-		fmt.Printf("\nMy Move: depth=%d score=%d move=[%s]\n\n", bestResult.depth, bestResult.score, bestResult.move.rotate())
-
-		pos = pos.move(bestResult.move)
 	}
 }
