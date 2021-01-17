@@ -51,6 +51,8 @@ const TABLE_SIZE = 1e7
 const QS_LIMIT = 219
 const EVAL_ROUGHNESS = 13
 
+var SETTING_MAX_DEPTH = 50
+
 type Position struct {
 	board  Board
 	score  int
@@ -524,6 +526,7 @@ type SearchResult struct {
 	depth int
 	move  Move
 	score int
+	nodes int
 }
 
 func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
@@ -547,6 +550,7 @@ func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
 			depth: depth,
 			move:  self.tp_move[pos],
 			score: self.tp_score[PDR{pos, depth, true}].lower,
+			nodes: self.nodes,
 		}) {
 			return
 		}
@@ -567,6 +571,24 @@ func (m Move) String() string {
 
 func (m Move) rotate() Move {
 	return Move{119 - m[0], 119 - m[1]}
+}
+
+func parseMove(str string) (Move, bool) {
+	if len(str) < 4 {
+		return Move{}, false
+	}
+
+	tbytes := []byte(str)
+	m0 := int(tbytes[0] - 'a')
+	m1 := int(tbytes[1] - '1')
+	m2 := int(tbytes[2] - 'a')
+	m3 := int(tbytes[3] - '1')
+
+	if m0 < 0 || m0 > 7 || m1 < 0 || m1 > 7 || m2 < 0 || m2 > 7 || m3 < 0 || m3 > 7 {
+		return Move{}, false
+	}
+
+	return Move{A1 + m0*E + m1*N, A1 + m2*E + m3*N}, true
 }
 
 func main() {
@@ -600,21 +622,10 @@ func main() {
 			fmt.Printf("Your move: ")
 			text, _ := reader.ReadString('\n')
 
-			if len(text) < 4 {
+			move, move_parse_valid := parseMove(text)
+			if !move_parse_valid {
 				continue
 			}
-
-			tbytes := []byte(text)
-			m0 := int(tbytes[0] - 'a')
-			m1 := int(tbytes[1] - '1')
-			m2 := int(tbytes[2] - 'a')
-			m3 := int(tbytes[3] - '1')
-
-			if m0 < 0 || m0 > 7 || m1 < 0 || m1 > 7 || m2 < 0 || m2 > 7 || m3 < 0 || m3 > 7 {
-				continue
-			}
-
-			move := Move{A1 + m0*E + m1*N, A1 + m2*E + m3*N}
 			valid := false
 
 			pos.gen_moves(func(m Move) bool {
@@ -658,36 +669,97 @@ func main() {
 			pos = pos.move(bestResult.move)
 		}
 	} else {
+		white_turn := true
 		for true {
 			command, _ := reader.ReadString('\n')
+			command = strings.TrimSpace(command)
 
 			switch {
 			case strings.HasPrefix(command, "quit"):
 				return
 			case strings.HasPrefix(command, "ucinewgame"):
+				searcher = NewSearcher()
 				pos = parseFEN(FEN_INITIAL)
 			case strings.HasPrefix(command, "uci"):
 				fmt.Printf("id name GoLangFish (Based on Sunfish)\n")
 				fmt.Printf("id author kargeor & Sunfish Contributors\n")
-				fmt.Printf("option name DepthLimit type spin default 8 min 1 max 32\n")
+				fmt.Printf("option name DepthLimit type spin default %d min 1 max 9999\n", SETTING_MAX_DEPTH)
 				fmt.Printf("uciok\n")
 			case strings.HasPrefix(command, "setoption"):
 				// TODO......
 			case strings.HasPrefix(command, "isready"):
 				fmt.Printf("readyok\n")
 			case strings.HasPrefix(command, "position"):
-				// TODO......
+				parts := strings.Split(command, " ")
+				for i := 1; i < len(parts); i++ {
+					part := parts[i]
+					switch {
+					case strings.HasPrefix(part, "startpos"):
+						pos = parseFEN(FEN_INITIAL)
+						white_turn = true
+					case strings.HasPrefix(part, "moves"):
+						for i++; i < len(parts); i++ {
+							move, move_ok := parseMove(parts[i])
+							if move_ok {
+								if white_turn {
+									pos = pos.move(move)
+									white_turn = false
+								} else {
+									pos = pos.move(move.rotate())
+									white_turn = true
+								}
+							} else {
+								fmt.Printf("info string Failed to parse move [%s]\n", parts[i])
+							}
+						}
+					case strings.HasPrefix(part, "fen"):
+						// TODO......
+						// don't forget to set [white_turn]
+						fmt.Printf("info string Failed to parse FEN\n")
+					}
+				}
 			case strings.HasPrefix(command, "go"):
+				wtime := 60000
+				btime := 60000
+				movestogo := 10
+				parts := strings.Split(command, " ")
+				for i := 1; i < len(parts); i++ {
+					part := parts[i]
+					switch {
+					case strings.HasPrefix(part, "wtime"):
+						i++
+						wtime, _ = strconv.Atoi(parts[i])
+					case strings.HasPrefix(part, "btime"):
+						i++
+						btime, _ = strconv.Atoi(parts[i])
+					case strings.HasPrefix(part, "movestogo"):
+						i++
+						movestogo, _ = strconv.Atoi(parts[i])
+					}
+				}
+
+				time_left_msec := btime / movestogo
+				if white_turn {
+					time_left_msec = wtime / movestogo
+				}
+				time_left_msec = max(0, time_left_msec-500) // safety margin
+
 				start := time.Now()
 				var bestResult SearchResult
+
 				searcher.search(pos, func(r SearchResult) bool {
-					elapsed := time.Since(start)
-					fmt.Printf("info string (%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate())
+					elapsed_ms := time.Since(start).Milliseconds()
+
+					fmt.Printf("info depth %d score cp %d nodes %d time %d pv TBD\n", r.depth, r.score, r.nodes, elapsed_ms)
 					bestResult = r
-					return r.depth >= 8
+					return r.depth >= SETTING_MAX_DEPTH || elapsed_ms > int64(time_left_msec)
 				})
-				// TODO: fixxxxxx
-				fmt.Printf("bestmove %s\n", bestResult.move)
+
+				if white_turn {
+					fmt.Printf("bestmove %s\n", bestResult.move)
+				} else {
+					fmt.Printf("bestmove %s\n", bestResult.move.rotate())
+				}
 			}
 		}
 	}
