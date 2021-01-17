@@ -48,9 +48,8 @@ const MATE_UPPER = 69290
 
 const TABLE_SIZE = 1e7
 
-const QS_LIMIT = 219
-const EVAL_ROUGHNESS = 13
-
+var SETTING_QS_LIMIT = 219
+var SETTING_EVAL_ROUGHNESS = 13
 var SETTING_MAX_DEPTH = 50
 
 type Position struct {
@@ -443,7 +442,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 		}
 
 		killer, killer_found := self.tp_move[pos]
-		if killer_found && (depth > 0 || pos.value(killer) >= QS_LIMIT) {
+		if killer_found && (depth > 0 || pos.value(killer) >= SETTING_QS_LIMIT) {
 			if yield(ScoreMove{
 				valid: true,
 				move:  killer,
@@ -454,7 +453,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 		}
 
 		for _, move := range pos.sorted_moves() {
-			if depth > 0 || pos.value(move) >= QS_LIMIT {
+			if depth > 0 || pos.value(move) >= SETTING_QS_LIMIT {
 				if yield(ScoreMove{
 					valid: true,
 					move:  move,
@@ -471,6 +470,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 		best = max(best, sm.score)
 		if best >= gamma {
 			if len(self.tp_move) > TABLE_SIZE {
+				fmt.Printf("info string tp_move table clear\n")
 				self.tp_move = make(map[Position]Move)
 			}
 
@@ -508,6 +508,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 	}
 
 	if len(self.tp_score) > TABLE_SIZE {
+		fmt.Printf("info string tp_score table clear\n")
 		self.tp_score = make(map[PDR]Entry)
 	}
 
@@ -534,7 +535,7 @@ func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
 
 	for depth := 1; depth < 1000; depth++ {
 		lower, upper := -MATE_UPPER, MATE_UPPER
-		for lower < upper-EVAL_ROUGHNESS {
+		for lower < upper-SETTING_EVAL_ROUGHNESS {
 			gamma := (lower + upper + 1) / 2
 			score := self.bound(pos, gamma, depth, true)
 			if score >= gamma {
@@ -681,9 +682,11 @@ func main() {
 				searcher = NewSearcher()
 				pos = parseFEN(FEN_INITIAL)
 			case strings.HasPrefix(command, "uci"):
-				fmt.Printf("id name GoLangFish (Based on Sunfish)\n")
+				fmt.Printf("id name GoLangFish\n")
 				fmt.Printf("id author kargeor & Sunfish Contributors\n")
-				fmt.Printf("option name DepthLimit type spin default %d min 1 max 9999\n", SETTING_MAX_DEPTH)
+				fmt.Printf("option name SETTING_MAX_DEPTH type spin default %d min 1 max 9999\n", SETTING_MAX_DEPTH)
+				fmt.Printf("option name SETTING_QS_LIMIT type spin default %d min 1 max 9999\n", SETTING_QS_LIMIT)
+				fmt.Printf("option name SETTING_EVAL_ROUGHNESS type spin default %d min 1 max 9999\n", SETTING_EVAL_ROUGHNESS)
 				fmt.Printf("uciok\n")
 			case strings.HasPrefix(command, "setoption"):
 				// TODO......
@@ -742,7 +745,7 @@ func main() {
 				if white_turn {
 					time_left_msec = wtime / movestogo
 				}
-				time_left_msec = max(0, time_left_msec-500) // safety margin
+				time_left_msec = max(0, time_left_msec-250) // safety margin
 
 				start := time.Now()
 				var bestResult SearchResult
@@ -750,7 +753,12 @@ func main() {
 				searcher.search(pos, func(r SearchResult) bool {
 					elapsed_ms := time.Since(start).Milliseconds()
 
-					fmt.Printf("info depth %d score cp %d nodes %d time %d pv TBD\n", r.depth, r.score, r.nodes, elapsed_ms)
+					pv := bestResult.move
+					if !white_turn {
+						pv = pv.rotate()
+					}
+
+					fmt.Printf("info depth %d score cp %d nodes %d time %d pv %s\n", r.depth, r.score, r.nodes, elapsed_ms, pv)
 					bestResult = r
 					return r.depth >= SETTING_MAX_DEPTH || elapsed_ms > int64(time_left_msec)
 				})
