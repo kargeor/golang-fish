@@ -29,6 +29,7 @@ const PIECE_K = 5
 const PIECE_IS_LOWER = 1 << 3
 const PIECE_IS_EMPTY = 1 << 4
 const PIECE_IS_INVALID = 1 << 5
+const PIECE_NOT_PIECE = PIECE_IS_EMPTY | PIECE_IS_INVALID
 
 var pst = PieceToIntArray{
 	// PIECE_P
@@ -91,19 +92,19 @@ func (board *Board) contains(p Piece) bool {
 }
 
 func (p Piece) isupper() bool {
-	return p != PIECE_IS_INVALID && p != PIECE_IS_EMPTY && (p&PIECE_IS_LOWER) == 0
+	return (p&PIECE_IS_LOWER) == 0 && (p&PIECE_NOT_PIECE) == 0
 }
 
 func (p Piece) islower() bool {
-	return p != PIECE_IS_INVALID && p != PIECE_IS_EMPTY && (p&PIECE_IS_LOWER) != 0
+	return (p&PIECE_IS_LOWER) != 0 && (p&PIECE_NOT_PIECE) == 0
 }
 
-func (p Piece) isspace() bool {
+func (p Piece) is_invalid_space() bool {
 	return p == PIECE_IS_INVALID
 }
 
 func (p Piece) swapcase() Piece {
-	if p == PIECE_IS_INVALID || p == PIECE_IS_EMPTY {
+	if (p & PIECE_NOT_PIECE) != 0 {
 		return p
 	}
 
@@ -198,15 +199,16 @@ func max(x, y int) int {
 func (self *Position) print() {
 	line := 8
 
+	fmt.Printf("     a b c d e f g h\n")
 	for i := A8; i <= H1; i += S {
-		fmt.Printf("  %d ", line)
+		fmt.Printf("  %d  ", line)
 		for j := 0; j < 8; j++ {
 			fmt.Printf("%s ", self.board[i+j])
 		}
-		fmt.Printf("\n")
+		fmt.Printf(" %d\n", line)
 		line--
 	}
-	fmt.Printf("    a b c d e f g h\n\n")
+	fmt.Printf("     a b c d e f g h\n\n")
 }
 
 func (self *Position) gen_moves(yield func(m Move) bool) {
@@ -217,20 +219,22 @@ func (self *Position) gen_moves(yield func(m Move) bool) {
 		for _, d := range directions[p] {
 			for j := (i + d); ; j += d {
 				q := self.board[j]
-				if q.isspace() || q.isupper() {
+				if q.is_invalid_space() || q.isupper() {
 					break
 				}
 
-				if p == PIECE_P && (d == N || d == N+N) && q != PIECE_IS_EMPTY {
-					break
-				}
+				if p == PIECE_P {
+					if (d == N || d == N+N) && q != PIECE_IS_EMPTY {
+						break
+					}
 
-				if p == PIECE_P && d == N+N && (i < A1+N || self.board[i+N] != PIECE_IS_EMPTY) {
-					break
-				}
+					if d == N+N && (i < A1+N || self.board[i+N] != PIECE_IS_EMPTY) {
+						break
+					}
 
-				if p == PIECE_P && (d == N+W || d == N+E) && q == PIECE_IS_EMPTY && j != self.ep && j != self.kp && j != self.kp-1 && j != self.kp+1 {
-					break
+					if (d == N+W || d == N+E) && q == PIECE_IS_EMPTY && j != self.ep && j != self.kp && j != self.kp-1 && j != self.kp+1 {
+						break
+					}
 				}
 
 				if yield(Move{i, j}) {
@@ -300,10 +304,39 @@ func (self *Position) rotate() Position {
 		kp = 119 - self.kp
 	}
 
-	// might miss swapcase if len() is odd!
-	for i, j := 0, len(board)-1; i < j; i, j = i+1, j-1 {
-		board[i], board[j] = board[j].swapcase(), board[i].swapcase()
-	}
+	// rotate & swap case
+	board[21], board[98] = board[98].swapcase(), board[21].swapcase()
+	board[22], board[97] = board[97].swapcase(), board[22].swapcase()
+	board[23], board[96] = board[96].swapcase(), board[23].swapcase()
+	board[24], board[95] = board[95].swapcase(), board[24].swapcase()
+	board[25], board[94] = board[94].swapcase(), board[25].swapcase()
+	board[26], board[93] = board[93].swapcase(), board[26].swapcase()
+	board[27], board[92] = board[92].swapcase(), board[27].swapcase()
+	board[28], board[91] = board[91].swapcase(), board[28].swapcase()
+	board[31], board[88] = board[88].swapcase(), board[31].swapcase()
+	board[32], board[87] = board[87].swapcase(), board[32].swapcase()
+	board[33], board[86] = board[86].swapcase(), board[33].swapcase()
+	board[34], board[85] = board[85].swapcase(), board[34].swapcase()
+	board[35], board[84] = board[84].swapcase(), board[35].swapcase()
+	board[36], board[83] = board[83].swapcase(), board[36].swapcase()
+	board[37], board[82] = board[82].swapcase(), board[37].swapcase()
+	board[38], board[81] = board[81].swapcase(), board[38].swapcase()
+	board[41], board[78] = board[78].swapcase(), board[41].swapcase()
+	board[42], board[77] = board[77].swapcase(), board[42].swapcase()
+	board[43], board[76] = board[76].swapcase(), board[43].swapcase()
+	board[44], board[75] = board[75].swapcase(), board[44].swapcase()
+	board[45], board[74] = board[74].swapcase(), board[45].swapcase()
+	board[46], board[73] = board[73].swapcase(), board[46].swapcase()
+	board[47], board[72] = board[72].swapcase(), board[47].swapcase()
+	board[48], board[71] = board[71].swapcase(), board[48].swapcase()
+	board[51], board[68] = board[68].swapcase(), board[51].swapcase()
+	board[52], board[67] = board[67].swapcase(), board[52].swapcase()
+	board[53], board[66] = board[66].swapcase(), board[53].swapcase()
+	board[54], board[65] = board[65].swapcase(), board[54].swapcase()
+	board[55], board[64] = board[64].swapcase(), board[55].swapcase()
+	board[56], board[63] = board[63].swapcase(), board[56].swapcase()
+	board[57], board[62] = board[62].swapcase(), board[57].swapcase()
+	board[58], board[61] = board[61].swapcase(), board[58].swapcase()
 
 	return Position{board, score, wc, bc, ep, kp}
 }
