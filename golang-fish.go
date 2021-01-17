@@ -16,18 +16,33 @@ type IntArray []int
 type Move [2]int
 type Piece byte
 type Board [120]Piece
-type PieceToIntArray map[Piece]IntArray
+type PieceToIntArray []IntArray
 
-const initial = "         \n         \n rnbqkbnr\n pppppppp\n ........\n ........\n ........\n ........\n PPPPPPPP\n RNBQKBNR\n         \n         \n"
 const FEN_INITIAL = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
+const PIECE_P = 0
+const PIECE_N = 1
+const PIECE_B = 2
+const PIECE_R = 3
+const PIECE_Q = 4
+const PIECE_K = 5
+const PIECE_IS_LOWER = 1 << 3
+const PIECE_IS_EMPTY = 1 << 4
+const PIECE_IS_INVALID = 1 << 5
+
 var pst = PieceToIntArray{
-	'P': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 178, 183, 186, 173, 202, 182, 185, 190, 0, 0, 107, 129, 121, 144, 140, 131, 144, 107, 0, 0, 83, 116, 98, 115, 114, 100, 115, 87, 0, 0, 74, 103, 110, 109, 106, 101, 100, 77, 0, 0, 78, 109, 105, 89, 90, 98, 103, 81, 0, 0, 69, 108, 93, 63, 64, 86, 103, 69, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	'N': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 227, 205, 205, 270, 225, 222, 210, 0, 0, 277, 274, 380, 244, 284, 342, 276, 266, 0, 0, 290, 347, 281, 354, 353, 307, 342, 278, 0, 0, 304, 304, 325, 317, 313, 321, 305, 297, 0, 0, 279, 285, 311, 301, 302, 315, 282, 280, 0, 0, 262, 290, 293, 302, 298, 295, 291, 266, 0, 0, 257, 265, 282, 280, 282, 280, 257, 260, 0, 0, 206, 257, 254, 256, 261, 245, 258, 211, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	'B': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 261, 242, 238, 244, 297, 213, 283, 270, 0, 0, 309, 340, 355, 278, 281, 351, 322, 298, 0, 0, 311, 359, 288, 361, 372, 310, 348, 306, 0, 0, 345, 337, 340, 354, 346, 345, 335, 330, 0, 0, 333, 330, 337, 343, 337, 336, 320, 327, 0, 0, 334, 345, 344, 335, 328, 345, 340, 335, 0, 0, 339, 340, 331, 326, 327, 326, 340, 336, 0, 0, 313, 322, 305, 308, 306, 305, 310, 310, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	'R': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 514, 508, 512, 483, 516, 512, 535, 529, 0, 0, 534, 508, 535, 546, 534, 541, 513, 539, 0, 0, 498, 514, 507, 512, 524, 506, 504, 494, 0, 0, 479, 484, 495, 492, 497, 475, 470, 473, 0, 0, 451, 444, 463, 458, 466, 450, 433, 449, 0, 0, 437, 451, 437, 454, 454, 444, 453, 433, 0, 0, 426, 441, 448, 453, 450, 436, 435, 426, 0, 0, 449, 455, 461, 484, 477, 461, 448, 447, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	'Q': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 935, 930, 921, 825, 998, 953, 1017, 955, 0, 0, 943, 961, 989, 919, 949, 1005, 986, 953, 0, 0, 927, 972, 961, 989, 1001, 992, 972, 931, 0, 0, 930, 913, 951, 946, 954, 949, 916, 923, 0, 0, 915, 914, 927, 924, 928, 919, 909, 907, 0, 0, 899, 923, 916, 918, 913, 918, 913, 902, 0, 0, 893, 911, 929, 910, 914, 914, 908, 891, 0, 0, 890, 899, 898, 916, 898, 893, 895, 887, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	'K': {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60004, 60054, 60047, 59901, 59901, 60060, 60083, 59938, 0, 0, 59968, 60010, 60055, 60056, 60056, 60055, 60010, 60003, 0, 0, 59938, 60012, 59943, 60044, 59933, 60028, 60037, 59969, 0, 0, 59945, 60050, 60011, 59996, 59981, 60013, 60000, 59951, 0, 0, 59945, 59957, 59948, 59972, 59949, 59953, 59992, 59950, 0, 0, 59953, 59958, 59957, 59921, 59936, 59968, 59971, 59968, 0, 0, 59996, 60003, 59986, 59950, 59943, 59982, 60013, 60004, 0, 0, 60017, 60030, 59997, 59986, 60006, 59999, 60040, 60018, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	// PIECE_P
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 178, 183, 186, 173, 202, 182, 185, 190, 0, 0, 107, 129, 121, 144, 140, 131, 144, 107, 0, 0, 83, 116, 98, 115, 114, 100, 115, 87, 0, 0, 74, 103, 110, 109, 106, 101, 100, 77, 0, 0, 78, 109, 105, 89, 90, 98, 103, 81, 0, 0, 69, 108, 93, 63, 64, 86, 103, 69, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	// PIECE_N
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 227, 205, 205, 270, 225, 222, 210, 0, 0, 277, 274, 380, 244, 284, 342, 276, 266, 0, 0, 290, 347, 281, 354, 353, 307, 342, 278, 0, 0, 304, 304, 325, 317, 313, 321, 305, 297, 0, 0, 279, 285, 311, 301, 302, 315, 282, 280, 0, 0, 262, 290, 293, 302, 298, 295, 291, 266, 0, 0, 257, 265, 282, 280, 282, 280, 257, 260, 0, 0, 206, 257, 254, 256, 261, 245, 258, 211, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	// PIECE_B
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 261, 242, 238, 244, 297, 213, 283, 270, 0, 0, 309, 340, 355, 278, 281, 351, 322, 298, 0, 0, 311, 359, 288, 361, 372, 310, 348, 306, 0, 0, 345, 337, 340, 354, 346, 345, 335, 330, 0, 0, 333, 330, 337, 343, 337, 336, 320, 327, 0, 0, 334, 345, 344, 335, 328, 345, 340, 335, 0, 0, 339, 340, 331, 326, 327, 326, 340, 336, 0, 0, 313, 322, 305, 308, 306, 305, 310, 310, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	// PIECE_R
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 514, 508, 512, 483, 516, 512, 535, 529, 0, 0, 534, 508, 535, 546, 534, 541, 513, 539, 0, 0, 498, 514, 507, 512, 524, 506, 504, 494, 0, 0, 479, 484, 495, 492, 497, 475, 470, 473, 0, 0, 451, 444, 463, 458, 466, 450, 433, 449, 0, 0, 437, 451, 437, 454, 454, 444, 453, 433, 0, 0, 426, 441, 448, 453, 450, 436, 435, 426, 0, 0, 449, 455, 461, 484, 477, 461, 448, 447, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	// PIECE_Q
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 935, 930, 921, 825, 998, 953, 1017, 955, 0, 0, 943, 961, 989, 919, 949, 1005, 986, 953, 0, 0, 927, 972, 961, 989, 1001, 992, 972, 931, 0, 0, 930, 913, 951, 946, 954, 949, 916, 923, 0, 0, 915, 914, 927, 924, 928, 919, 909, 907, 0, 0, 899, 923, 916, 918, 913, 918, 913, 902, 0, 0, 893, 911, 929, 910, 914, 914, 908, 891, 0, 0, 890, 899, 898, 916, 898, 893, 895, 887, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	// PIECE_K
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60004, 60054, 60047, 59901, 59901, 60060, 60083, 59938, 0, 0, 59968, 60010, 60055, 60056, 60056, 60055, 60010, 60003, 0, 0, 59938, 60012, 59943, 60044, 59933, 60028, 60037, 59969, 0, 0, 59945, 60050, 60011, 59996, 59981, 60013, 60000, 59951, 0, 0, 59945, 59957, 59948, 59972, 59949, 59953, 59992, 59950, 0, 0, 59953, 59958, 59957, 59921, 59936, 59968, 59971, 59968, 0, 0, 59996, 60003, 59986, 59950, 59943, 59982, 60013, 60004, 0, 0, 60017, 60030, 59997, 59986, 60006, 59999, 60040, 60018, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 }
 
 const A1, H1, A8, H8 = 91, 98, 21, 28
@@ -35,12 +50,18 @@ const A1, H1, A8, H8 = 91, 98, 21, 28
 const N, E, S, W = -10, 1, 10, -1
 
 var directions = PieceToIntArray{
-	'P': {N, N + N, N + W, N + E},
-	'N': {N + N + E, E + N + E, E + S + E, S + S + E, S + S + W, W + S + W, W + N + W, N + N + W},
-	'B': {N + E, S + E, S + W, N + W},
-	'R': {N, E, S, W},
-	'Q': {N, E, S, W, N + E, S + E, S + W, N + W},
-	'K': {N, E, S, W, N + E, S + E, S + W, N + W},
+	// PIECE_P
+	{N, N + N, N + W, N + E},
+	// PIECE_N
+	{N + N + E, E + N + E, E + S + E, S + S + E, S + S + W, W + S + W, W + N + W, N + N + W},
+	// PIECE_B
+	{N + E, S + E, S + W, N + W},
+	// PIECE_R
+	{N, E, S, W},
+	// PIECE_Q
+	{N, E, S, W, N + E, S + E, S + W, N + W},
+	// PIECE_K
+	{N, E, S, W, N + E, S + E, S + W, N + W},
 }
 
 const MATE_LOWER = 50710
@@ -70,25 +91,94 @@ func (board *Board) contains(p Piece) bool {
 }
 
 func (p Piece) isupper() bool {
-	return p >= 'A' && p <= 'Z'
+	return p != PIECE_IS_INVALID && p != PIECE_IS_EMPTY && (p&PIECE_IS_LOWER) == 0
 }
 
 func (p Piece) islower() bool {
-	return p >= 'a' && p <= 'z'
+	return p != PIECE_IS_INVALID && p != PIECE_IS_EMPTY && (p&PIECE_IS_LOWER) != 0
 }
 
 func (p Piece) isspace() bool {
-	return p == ' ' || p == '\n'
+	return p == PIECE_IS_INVALID
 }
 
 func (p Piece) swapcase() Piece {
-	if p.isupper() {
-		return p - 'A' + 'a'
-	} else if p.islower() {
-		return p - 'a' + 'A'
+	if p == PIECE_IS_INVALID || p == PIECE_IS_EMPTY {
+		return p
 	}
 
-	return p
+	return p ^ PIECE_IS_LOWER
+}
+
+func (p Piece) String() string {
+	switch p {
+	case PIECE_IS_EMPTY:
+		return "."
+	case PIECE_IS_INVALID:
+		return " "
+	case PIECE_P:
+		return "P"
+	case PIECE_N:
+		return "N"
+	case PIECE_B:
+		return "B"
+	case PIECE_R:
+		return "R"
+	case PIECE_Q:
+		return "Q"
+	case PIECE_K:
+		return "K"
+	case PIECE_P | PIECE_IS_LOWER:
+		return "p"
+	case PIECE_N | PIECE_IS_LOWER:
+		return "n"
+	case PIECE_B | PIECE_IS_LOWER:
+		return "b"
+	case PIECE_R | PIECE_IS_LOWER:
+		return "r"
+	case PIECE_Q | PIECE_IS_LOWER:
+		return "q"
+	case PIECE_K | PIECE_IS_LOWER:
+		return "k"
+	}
+
+	return "?"
+}
+
+func MakePiece(b byte) Piece {
+	switch b {
+	case '.':
+		return PIECE_IS_EMPTY
+	case ' ':
+		return PIECE_IS_INVALID
+	case 'P':
+		return PIECE_P
+	case 'N':
+		return PIECE_N
+	case 'B':
+		return PIECE_B
+	case 'R':
+		return PIECE_R
+	case 'Q':
+		return PIECE_Q
+	case 'K':
+		return PIECE_K
+	case 'p':
+		return PIECE_P | PIECE_IS_LOWER
+	case 'n':
+		return PIECE_N | PIECE_IS_LOWER
+	case 'b':
+		return PIECE_B | PIECE_IS_LOWER
+	case 'r':
+		return PIECE_R | PIECE_IS_LOWER
+	case 'q':
+		return PIECE_Q | PIECE_IS_LOWER
+	case 'k':
+		return PIECE_K | PIECE_IS_LOWER
+	}
+
+	fmt.Printf("Bad piece byte %d\n", b)
+	return 0xFF
 }
 
 func abs(x int) int {
@@ -111,7 +201,7 @@ func (self *Position) print() {
 	for i := A8; i <= H1; i += S {
 		fmt.Printf("  %d ", line)
 		for j := 0; j < 8; j++ {
-			fmt.Printf("%c ", self.board[i+j])
+			fmt.Printf("%s ", self.board[i+j])
 		}
 		fmt.Printf("\n")
 		line--
@@ -131,15 +221,15 @@ func (self *Position) gen_moves(yield func(m Move) bool) {
 					break
 				}
 
-				if p == 'P' && (d == N || d == N+N) && q != '.' {
+				if p == PIECE_P && (d == N || d == N+N) && q != PIECE_IS_EMPTY {
 					break
 				}
 
-				if p == 'P' && d == N+N && (i < A1+N || self.board[i+N] != '.') {
+				if p == PIECE_P && d == N+N && (i < A1+N || self.board[i+N] != PIECE_IS_EMPTY) {
 					break
 				}
 
-				if p == 'P' && (d == N+W || d == N+E) && q == '.' && j != self.ep && j != self.kp && j != self.kp-1 && j != self.kp+1 {
+				if p == PIECE_P && (d == N+W || d == N+E) && q == PIECE_IS_EMPTY && j != self.ep && j != self.kp && j != self.kp-1 && j != self.kp+1 {
 					break
 				}
 
@@ -147,17 +237,17 @@ func (self *Position) gen_moves(yield func(m Move) bool) {
 					return
 				}
 
-				if q.islower() || p == 'P' || p == 'N' || p == 'K' {
+				if q.islower() || p == PIECE_P || p == PIECE_N || p == PIECE_K {
 					break
 				}
 
-				if i == A1 && self.board[j+E] == 'K' && self.wc[0] {
+				if i == A1 && self.board[j+E] == PIECE_K && self.wc[0] {
 					if yield(Move{j + E, j + W}) {
 						return
 					}
 				}
 
-				if i == H1 && self.board[j+W] == 'K' && self.wc[1] {
+				if i == H1 && self.board[j+W] == PIECE_K && self.wc[1] {
 					if yield(Move{j + W, j + E}) {
 						return
 					}
@@ -233,7 +323,7 @@ func (self *Position) move(move Move) Position {
 	score := self.score + self.value(move)
 
 	board[j] = board[i]
-	board[i] = '.'
+	board[i] = PIECE_IS_EMPTY
 
 	if i == A1 {
 		wc = [2]bool{false, wc[1]}
@@ -248,28 +338,28 @@ func (self *Position) move(move Move) Position {
 		bc = [2]bool{false, bc[1]}
 	}
 
-	if p == 'K' {
+	if p == PIECE_K {
 		wc = [2]bool{false, false}
 		if abs(j-i) == 2 {
 			kp = (i + j) / 2
 			if j < i {
-				board[A1] = '.'
+				board[A1] = PIECE_IS_EMPTY
 			} else {
-				board[H1] = '.'
+				board[H1] = PIECE_IS_EMPTY
 			}
-			board[kp] = 'R'
+			board[kp] = PIECE_R
 		}
 	}
 
-	if p == 'P' {
+	if p == PIECE_P {
 		if A8 <= j && j <= H8 {
-			board[j] = 'Q'
+			board[j] = PIECE_Q
 		}
 		if j-i == 2*N {
 			ep = i + N
 		}
 		if j == self.ep {
-			board[j+S] = '.'
+			board[j+S] = PIECE_IS_EMPTY
 		}
 	}
 
@@ -288,24 +378,24 @@ func (self *Position) value(move Move) int {
 	}
 
 	if abs(j-self.kp) < 2 {
-		score += pst['K'][119-j]
+		score += pst[PIECE_K][119-j]
 	}
 
-	if p == 'K' && abs(i-j) == 2 {
-		score += pst['R'][(i+j)/2]
+	if p == PIECE_K && abs(i-j) == 2 {
+		score += pst[PIECE_R][(i+j)/2]
 		if j < i {
-			score -= pst['R'][A1]
+			score -= pst[PIECE_R][A1]
 		} else {
-			score -= pst['R'][H1]
+			score -= pst[PIECE_R][H1]
 		}
 	}
 
-	if p == 'P' {
+	if p == PIECE_P {
 		if A8 <= j && j <= H8 {
-			score += pst['Q'][j] - pst['P'][j]
+			score += pst[PIECE_Q][j] - pst[PIECE_P][j]
 		}
 		if j == self.ep {
-			score += pst['P'][119-(j+S)]
+			score += pst[PIECE_P][119-(j+S)]
 		}
 	}
 
@@ -322,7 +412,7 @@ func parseFEN(fen string) Position {
 		count, _ := strconv.Atoi(str)
 		return strings.Repeat(".", count)
 	})
-	board = "         \n         \n " + slash.ReplaceAllString(board, "\n ") + "\n         \n         \n"
+	board = "                     " + slash.ReplaceAllString(board, "  ") + "                     "
 
 	if len(board) != 120 {
 		fmt.Printf("FEN parse failed [%s]\n", fen)
@@ -330,7 +420,9 @@ func parseFEN(fen string) Position {
 	}
 
 	var parsed_board Board
-	copy(parsed_board[:], []Piece(board))
+	for i := 0; i < 120; i++ {
+		parsed_board[i] = MakePiece(board[i])
+	}
 
 	wc := [2]bool{strings.Contains(castling, "Q"), strings.Contains(castling, "K")}
 	bc := [2]bool{strings.Contains(castling, "k"), strings.Contains(castling, "q")}
@@ -419,10 +511,10 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 
 	moves := func(yield func(sm ScoreMove) bool) {
 		if depth > 0 && !root {
-			if pos.board.contains('R') ||
-				pos.board.contains('B') ||
-				pos.board.contains('N') ||
-				pos.board.contains('Q') {
+			if pos.board.contains(PIECE_R) ||
+				pos.board.contains(PIECE_B) ||
+				pos.board.contains(PIECE_N) ||
+				pos.board.contains(PIECE_Q) {
 				if yield(ScoreMove{
 					valid: false,
 					score: -self.bound(pos.nullmove(), 1-gamma, depth-3, false),
@@ -599,17 +691,7 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	searcher := NewSearcher()
 
-	var initial_board Board
-	copy(initial_board[:], []Piece(initial))
-
-	pos := Position{
-		board: initial_board,
-		score: 0,
-		wc:    [2]bool{true, true},
-		bc:    [2]bool{true, true},
-		ep:    0,
-		kp:    0,
-	}
+	pos := parseFEN(FEN_INITIAL)
 
 	if *interactiveFlagPtr {
 		for true {
