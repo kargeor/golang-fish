@@ -288,67 +288,69 @@ func (self *Position) is_dead() bool {
 	return result
 }
 
-func (self *Position) rotate() Position {
-	board := self.board
-	score := -self.score
-	wc := self.bc
-	bc := self.wc
-	ep := 0
-	kp := 0
+func (self *Position) rotate() *Position {
+	pos := &Position{}
+
+	pos.board = self.board
+	pos.score = -self.score
+	pos.wc = self.bc
+	pos.bc = self.wc
+	pos.ep = 0
+	pos.kp = 0
 
 	if self.ep != 0 {
-		ep = 119 - self.ep
+		pos.ep = 119 - self.ep
 	}
 
 	if self.kp != 0 {
-		kp = 119 - self.kp
+		pos.kp = 119 - self.kp
 	}
 
 	// rotate & swap case
-	board[21], board[98] = board[98].swapcase(), board[21].swapcase()
-	board[22], board[97] = board[97].swapcase(), board[22].swapcase()
-	board[23], board[96] = board[96].swapcase(), board[23].swapcase()
-	board[24], board[95] = board[95].swapcase(), board[24].swapcase()
-	board[25], board[94] = board[94].swapcase(), board[25].swapcase()
-	board[26], board[93] = board[93].swapcase(), board[26].swapcase()
-	board[27], board[92] = board[92].swapcase(), board[27].swapcase()
-	board[28], board[91] = board[91].swapcase(), board[28].swapcase()
-	board[31], board[88] = board[88].swapcase(), board[31].swapcase()
-	board[32], board[87] = board[87].swapcase(), board[32].swapcase()
-	board[33], board[86] = board[86].swapcase(), board[33].swapcase()
-	board[34], board[85] = board[85].swapcase(), board[34].swapcase()
-	board[35], board[84] = board[84].swapcase(), board[35].swapcase()
-	board[36], board[83] = board[83].swapcase(), board[36].swapcase()
-	board[37], board[82] = board[82].swapcase(), board[37].swapcase()
-	board[38], board[81] = board[81].swapcase(), board[38].swapcase()
-	board[41], board[78] = board[78].swapcase(), board[41].swapcase()
-	board[42], board[77] = board[77].swapcase(), board[42].swapcase()
-	board[43], board[76] = board[76].swapcase(), board[43].swapcase()
-	board[44], board[75] = board[75].swapcase(), board[44].swapcase()
-	board[45], board[74] = board[74].swapcase(), board[45].swapcase()
-	board[46], board[73] = board[73].swapcase(), board[46].swapcase()
-	board[47], board[72] = board[72].swapcase(), board[47].swapcase()
-	board[48], board[71] = board[71].swapcase(), board[48].swapcase()
-	board[51], board[68] = board[68].swapcase(), board[51].swapcase()
-	board[52], board[67] = board[67].swapcase(), board[52].swapcase()
-	board[53], board[66] = board[66].swapcase(), board[53].swapcase()
-	board[54], board[65] = board[65].swapcase(), board[54].swapcase()
-	board[55], board[64] = board[64].swapcase(), board[55].swapcase()
-	board[56], board[63] = board[63].swapcase(), board[56].swapcase()
-	board[57], board[62] = board[62].swapcase(), board[57].swapcase()
-	board[58], board[61] = board[61].swapcase(), board[58].swapcase()
+	pos.board[21], pos.board[98] = pos.board[98].swapcase(), pos.board[21].swapcase()
+	pos.board[22], pos.board[97] = pos.board[97].swapcase(), pos.board[22].swapcase()
+	pos.board[23], pos.board[96] = pos.board[96].swapcase(), pos.board[23].swapcase()
+	pos.board[24], pos.board[95] = pos.board[95].swapcase(), pos.board[24].swapcase()
+	pos.board[25], pos.board[94] = pos.board[94].swapcase(), pos.board[25].swapcase()
+	pos.board[26], pos.board[93] = pos.board[93].swapcase(), pos.board[26].swapcase()
+	pos.board[27], pos.board[92] = pos.board[92].swapcase(), pos.board[27].swapcase()
+	pos.board[28], pos.board[91] = pos.board[91].swapcase(), pos.board[28].swapcase()
+	pos.board[31], pos.board[88] = pos.board[88].swapcase(), pos.board[31].swapcase()
+	pos.board[32], pos.board[87] = pos.board[87].swapcase(), pos.board[32].swapcase()
+	pos.board[33], pos.board[86] = pos.board[86].swapcase(), pos.board[33].swapcase()
+	pos.board[34], pos.board[85] = pos.board[85].swapcase(), pos.board[34].swapcase()
+	pos.board[35], pos.board[84] = pos.board[84].swapcase(), pos.board[35].swapcase()
+	pos.board[36], pos.board[83] = pos.board[83].swapcase(), pos.board[36].swapcase()
+	pos.board[37], pos.board[82] = pos.board[82].swapcase(), pos.board[37].swapcase()
+	pos.board[38], pos.board[81] = pos.board[81].swapcase(), pos.board[38].swapcase()
+	pos.board[41], pos.board[78] = pos.board[78].swapcase(), pos.board[41].swapcase()
+	pos.board[42], pos.board[77] = pos.board[77].swapcase(), pos.board[42].swapcase()
+	pos.board[43], pos.board[76] = pos.board[76].swapcase(), pos.board[43].swapcase()
+	pos.board[44], pos.board[75] = pos.board[75].swapcase(), pos.board[44].swapcase()
+	pos.board[45], pos.board[74] = pos.board[74].swapcase(), pos.board[45].swapcase()
+	pos.board[46], pos.board[73] = pos.board[73].swapcase(), pos.board[46].swapcase()
+	pos.board[47], pos.board[72] = pos.board[72].swapcase(), pos.board[47].swapcase()
+	pos.board[48], pos.board[71] = pos.board[71].swapcase(), pos.board[48].swapcase()
+	pos.board[51], pos.board[68] = pos.board[68].swapcase(), pos.board[51].swapcase()
+	pos.board[52], pos.board[67] = pos.board[67].swapcase(), pos.board[52].swapcase()
+	pos.board[53], pos.board[66] = pos.board[66].swapcase(), pos.board[53].swapcase()
+	pos.board[54], pos.board[65] = pos.board[65].swapcase(), pos.board[54].swapcase()
+	pos.board[55], pos.board[64] = pos.board[64].swapcase(), pos.board[55].swapcase()
+	pos.board[56], pos.board[63] = pos.board[63].swapcase(), pos.board[56].swapcase()
+	pos.board[57], pos.board[62] = pos.board[62].swapcase(), pos.board[57].swapcase()
+	pos.board[58], pos.board[61] = pos.board[61].swapcase(), pos.board[58].swapcase()
 
-	return Position{board, score, wc, bc, ep, kp}
+	return pos
 }
 
-func (self *Position) nullmove() Position {
-	result := self.rotate()
-	result.ep = 0
-	result.kp = 0
-	return result
+func (self *Position) nullmove() *Position {
+	pos := self.rotate()
+	pos.ep = 0
+	pos.kp = 0
+	return pos
 }
 
-func (self *Position) move(move Move) Position {
+func (self *Position) move(move Move) *Position {
 	i, j := move[0], move[1]
 	p := self.board[i]
 	board := self.board
@@ -438,7 +440,7 @@ func (self *Position) value(move Move) int {
 var digit = regexp.MustCompile(`\d`)
 var slash = regexp.MustCompile(`/`)
 
-func parseFEN(fen string) Position {
+func parseFEN(fen string) *Position {
 	parts := strings.Split(fen, " ")
 	board, color, castling, enpas := parts[0], parts[1], parts[2], parts[3]
 	board = digit.ReplaceAllStringFunc(board, func(str string) string {
@@ -449,7 +451,7 @@ func parseFEN(fen string) Position {
 
 	if len(board) != 120 {
 		fmt.Printf("FEN parse failed [%s]\n", fen)
-		return Position{}
+		return nil
 	}
 
 	var parsed_board Board
@@ -481,7 +483,7 @@ func parseFEN(fen string) Position {
 	}
 
 	if color == "w" {
-		return pos
+		return &pos
 	}
 	return pos.rotate()
 }
@@ -516,7 +518,7 @@ func NewSearcher() *Searcher {
 	}
 }
 
-func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
+func (self *Searcher) bound(pos *Position, gamma int, depth int, root bool) int {
 	self.nodes += 1
 	depth = max(depth, 0)
 
@@ -524,7 +526,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 		return -MATE_UPPER
 	}
 
-	entry, entry_found := self.tp_score[PDR{pos, depth, root}]
+	entry, entry_found := self.tp_score[PDR{*pos, depth, root}]
 	if !entry_found {
 		entry = Entry{-MATE_UPPER, MATE_UPPER}
 	}
@@ -533,7 +535,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 		if !root {
 			return entry.lower
 		}
-		if _, found := self.tp_move[pos]; found {
+		if _, found := self.tp_move[*pos]; found {
 			return entry.lower
 		}
 	}
@@ -566,7 +568,7 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 			}
 		}
 
-		killer, killer_found := self.tp_move[pos]
+		killer, killer_found := self.tp_move[*pos]
 		if killer_found && (depth > 0 || pos.value(killer) >= SETTING_QS_LIMIT) {
 			if yield(ScoreMove{
 				valid: true,
@@ -600,9 +602,9 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 			}
 
 			if sm.valid {
-				self.tp_move[pos] = sm.move
+				self.tp_move[*pos] = sm.move
 			} else {
-				delete(self.tp_move, pos)
+				delete(self.tp_move, *pos)
 			}
 
 			return true
@@ -638,11 +640,11 @@ func (self *Searcher) bound(pos Position, gamma int, depth int, root bool) int {
 	}
 
 	if best >= gamma {
-		self.tp_score[PDR{pos, depth, root}] = Entry{best, entry.upper}
+		self.tp_score[PDR{*pos, depth, root}] = Entry{best, entry.upper}
 	}
 
 	if best < gamma {
-		self.tp_score[PDR{pos, depth, root}] = Entry{entry.lower, best}
+		self.tp_score[PDR{*pos, depth, root}] = Entry{entry.lower, best}
 	}
 
 	return best
@@ -655,7 +657,7 @@ type SearchResult struct {
 	nodes int
 }
 
-func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
+func (self *Searcher) search(pos *Position, yield func(r SearchResult) bool) {
 	self.nodes = 0
 
 	for depth := 1; depth < 1000; depth++ {
@@ -674,8 +676,8 @@ func (self *Searcher) search(pos Position, yield func(r SearchResult) bool) {
 
 		if yield(SearchResult{
 			depth: depth,
-			move:  self.tp_move[pos],
-			score: self.tp_score[PDR{pos, depth, true}].lower,
+			move:  self.tp_move[*pos],
+			score: self.tp_score[PDR{*pos, depth, true}].lower,
 			nodes: self.nodes,
 		}) {
 			return
