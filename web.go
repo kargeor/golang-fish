@@ -10,11 +10,23 @@ import (
 
 const initial = "                     rnbqkbnr  pppppppp  ........  ........  ........  ........  PPPPPPPP  RNBQKBNR                     "
 
+const (
+	CLICK_SQUARE = iota
+	CLICK_NEW_GAME_WHITE
+	CLICK_NEW_GAME_BLACK
+	CLICK_UNDO
+)
+
+type Event struct {
+	event_type, x, y int
+}
+
 var document, chessboardDiv, logDiv js.Value
 var squareDivs []js.Value
 var pos *Position
 var searcher *Searcher
 var moveFrom = 0
+var events = make(chan Event)
 
 func getElementById(name string) js.Value {
 	return document.Call("getElementById", name)
@@ -27,9 +39,13 @@ func createDiv(parent js.Value) js.Value {
 	return newDiv
 }
 
-func addClickHandler(div js.Value, handler func(int, int), arg1, arg2 int) {
+func addClickHandler(div js.Value, event Event) {
 	cb := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		handler(arg1, arg2)
+		select {
+		case events <- event:
+		default:
+			// ignore event if already full
+		}
 		return nil
 	})
 	div.Call("addEventListener", "click", cb)
@@ -96,16 +112,21 @@ func clickHandler(i, j int) {
 		moveFrom = 0
 		clearSelected()
 
+		waitForJs()
+
 		if move_valid {
 			pos = pos.move(move)
 			rotated := pos.rotate()
 			updateChessBoard(rotated)
+
+			waitForJs()
 
 			start := time.Now()
 			var bestResult SearchResult
 			searcher.search(pos, func(r SearchResult) bool {
 				elapsed := time.Since(start)
 				log(fmt.Sprintf("(%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate()))
+				waitForJs()
 				bestResult = r
 				return r.depth >= 8
 			})
@@ -123,7 +144,7 @@ func main() {
 		for j := 0; j < 8; j++ {
 			div := createDiv(p)
 			squareDivs = append(squareDivs, div)
-			addClickHandler(div, clickHandler, i, j)
+			addClickHandler(div, Event{CLICK_SQUARE, i, j})
 		}
 	}
 
@@ -144,6 +165,19 @@ func main() {
 	searcher = NewSearcher()
 	updateChessBoard(pos)
 
-	// wait forever (for callbacks)
-	<-make(chan bool)
+	// wait for events
+	for event := range events {
+		clickHandler(event.x, event.y)
+	}
+}
+
+var waitForJsTimeOutChan = make(chan bool)
+var jsTimeoutCallback = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	waitForJsTimeOutChan <- true
+	return nil
+})
+
+func waitForJs() {
+	js.Global().Call("setTimeout", jsTimeoutCallback, 10)
+	<-waitForJsTimeOutChan
 }
