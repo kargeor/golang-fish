@@ -61,6 +61,35 @@
       background-color: rgba(0, 0, 0, 0.5);
       border: 1px solid white;
     }
+    /* https://loading.io/css/ CC0 License */
+    .lds-dual-ring {
+      display: inline-block;
+      width: 80px;
+      height: 80px;
+      position: fixed;
+      top: 220px;
+      left: calc(50% - 40px);
+    }
+    .lds-dual-ring:after {
+      content: " ";
+      display: block;
+      width: 64px;
+      height: 64px;
+      margin: 8px;
+      border-radius: 50%;
+      border: 6px solid navy;
+      border-color: navy transparent navy transparent;
+      animation: lds-dual-ring 1.2s linear infinite;
+    }
+    @keyframes lds-dual-ring {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+    /* End CC0 License */
   </style>
 </head>
 
@@ -69,6 +98,7 @@
   <button id="playW">Play White vs Engine</button>
   <button id="playB">Play Black vs Engine</button>
   <button id="undoMove">Undo Move</button>
+  <div id="spinner" style="display: none" class="lds-dual-ring"></div>
   <div id="logbox">
     Click a square to select a piece, then click to select where to move.
   </div>

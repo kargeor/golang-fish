@@ -27,6 +27,7 @@ var pos *Position
 var searcher *Searcher
 var moveFrom = 0
 var events = make(chan Event)
+var spinner js.Value
 
 func getElementById(name string) js.Value {
 	return document.Call("getElementById", name)
@@ -71,13 +72,26 @@ func log(str string) {
 	logDiv.Set("innerText", str)
 }
 
+func setSpinnerVisible(v bool) {
+	if v {
+		spinner.Get("style").Set("display", "")
+	} else {
+		spinner.Get("style").Set("display", "none")
+	}
+}
+
 func clearSelected() {
 	for _, div := range squareDivs {
 		div.Set("className", "")
 	}
 }
 
-func clickHandler(i, j int) {
+func squareClickHandler(i, j int) {
+	if pos.score <= -MATE_LOWER {
+		log("You lost")
+		return
+	}
+
 	if moveFrom == 0 {
 		moveFrom = A8 + i*S + j*E
 		available := 0
@@ -119,7 +133,14 @@ func clickHandler(i, j int) {
 			rotated := pos.rotate()
 			updateChessBoard(rotated)
 
+			setSpinnerVisible(true)
 			waitForJs()
+
+			if pos.score <= -MATE_LOWER {
+				log("You won!")
+				setSpinnerVisible(false)
+				return
+			}
 
 			start := time.Now()
 			var bestResult SearchResult
@@ -128,26 +149,21 @@ func clickHandler(i, j int) {
 				log(fmt.Sprintf("(%s) depth=%d score=%d move=[%s]\n", elapsed, r.depth, r.score, r.move.rotate()))
 				waitForJs()
 				bestResult = r
-				return r.depth >= 8
+				return r.depth >= 7
 			})
+
+			if bestResult.score == MATE_UPPER {
+				log("Checkmate!")
+			}
+
+			pos = pos.move(bestResult.move)
+			updateChessBoard(pos)
+			setSpinnerVisible(false)
 		}
 	}
 }
 
-func main() {
-	document = js.Global().Get("document")
-	chessboardDiv = getElementById("chessboard")
-	logDiv = getElementById("logbox")
-
-	for i := 0; i < 8; i++ {
-		p := createDiv(chessboardDiv)
-		for j := 0; j < 8; j++ {
-			div := createDiv(p)
-			squareDivs = append(squareDivs, div)
-			addClickHandler(div, Event{CLICK_SQUARE, i, j})
-		}
-	}
-
+func newGame(playFirst bool) {
 	var initial_board Board
 	for i := 0; i < 120; i++ {
 		initial_board[i] = MakePiece(initial[i])
@@ -163,11 +179,52 @@ func main() {
 	}
 
 	searcher = NewSearcher()
+
+	if playFirst {
+		var bestResult SearchResult
+		searcher.search(pos, func(r SearchResult) bool {
+			bestResult = r
+			return true
+		})
+
+		pos = pos.move(bestResult.move)
+	}
+
 	updateChessBoard(pos)
+}
+
+func main() {
+	document = js.Global().Get("document")
+	chessboardDiv = getElementById("chessboard")
+	logDiv = getElementById("logbox")
+	spinner = getElementById("spinner")
+
+	for i := 0; i < 8; i++ {
+		p := createDiv(chessboardDiv)
+		for j := 0; j < 8; j++ {
+			div := createDiv(p)
+			squareDivs = append(squareDivs, div)
+			addClickHandler(div, Event{CLICK_SQUARE, i, j})
+		}
+	}
+
+	addClickHandler(getElementById("playW"), Event{event_type: CLICK_NEW_GAME_WHITE})
+	addClickHandler(getElementById("playB"), Event{event_type: CLICK_NEW_GAME_BLACK})
+	addClickHandler(getElementById("undoMove"), Event{event_type: CLICK_UNDO})
+
+	newGame(false)
 
 	// wait for events
 	for event := range events {
-		clickHandler(event.x, event.y)
+		switch event.event_type {
+		case CLICK_SQUARE:
+			squareClickHandler(event.x, event.y)
+		case CLICK_NEW_GAME_WHITE:
+			newGame(false)
+		case CLICK_NEW_GAME_BLACK:
+			newGame(true)
+		case CLICK_UNDO:
+		}
 	}
 }
 
