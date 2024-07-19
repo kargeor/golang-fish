@@ -19,30 +19,134 @@ const PIECE_B = 2
 const PIECE_R = 3
 const PIECE_Q = 4
 const PIECE_K = 5
+
 const PIECE_IS_LOWER = 1 << 3
 const PIECE_IS_EMPTY = 1 << 4
 const PIECE_IS_INVALID = 1 << 5
 const PIECE_NOT_PIECE = PIECE_IS_EMPTY | PIECE_IS_INVALID
 
+var piece = IntArray{
+	// P
+	100,
+	// N
+	280,
+	// B
+	320,
+	// R
+	479,
+	// Q
+	929,
+	// K
+	60_000,
+}
+
 var pst = PieceToIntArray{
 	// PIECE_P
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 178, 183, 186, 173, 202, 182, 185, 190, 0, 0, 107, 129, 121, 144, 140, 131, 144, 107, 0, 0, 83, 116, 98, 115, 114, 100, 115, 87, 0, 0, 74, 103, 110, 109, 106, 101, 100, 77, 0, 0, 78, 109, 105, 89, 90, 98, 103, 81, 0, 0, 69, 108, 93, 63, 64, 86, 103, 69, 0, 0, 100, 100, 100, 100, 100, 100, 100, 100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0,
+		78, 83, 86, 73, 102, 82, 85, 90,
+		7, 29, 21, 44, 40, 31, 44, 7,
+		-17, 16, -2, 15, 14, 0, 15, -13,
+		-26, 3, 10, 9, 6, 1, 0, -23,
+		-22, 9, 5, -11, -10, -2, 3, -19,
+		-31, 8, -7, -37, -36, -14, 3, -31,
+		0, 0, 0, 0, 0, 0, 0, 0},
 	// PIECE_N
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 214, 227, 205, 205, 270, 225, 222, 210, 0, 0, 277, 274, 380, 244, 284, 342, 276, 266, 0, 0, 290, 347, 281, 354, 353, 307, 342, 278, 0, 0, 304, 304, 325, 317, 313, 321, 305, 297, 0, 0, 279, 285, 311, 301, 302, 315, 282, 280, 0, 0, 262, 290, 293, 302, 298, 295, 291, 266, 0, 0, 257, 265, 282, 280, 282, 280, 257, 260, 0, 0, 206, 257, 254, 256, 261, 245, 258, 211, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{-66, -53, -75, -75, -10, -55, -58, -70,
+		-3, -6, 100, -36, 4, 62, -4, -14,
+		10, 67, 1, 74, 73, 27, 62, -2,
+		24, 24, 45, 37, 33, 41, 25, 17,
+		-1, 5, 31, 21, 22, 35, 2, 0,
+		-18, 10, 13, 22, 18, 15, 11, -14,
+		-23, -15, 2, 0, 2, 0, -23, -20,
+		-74, -23, -26, -24, -19, -35, -22, -69},
 	// PIECE_B
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 261, 242, 238, 244, 297, 213, 283, 270, 0, 0, 309, 340, 355, 278, 281, 351, 322, 298, 0, 0, 311, 359, 288, 361, 372, 310, 348, 306, 0, 0, 345, 337, 340, 354, 346, 345, 335, 330, 0, 0, 333, 330, 337, 343, 337, 336, 320, 327, 0, 0, 334, 345, 344, 335, 328, 345, 340, 335, 0, 0, 339, 340, 331, 326, 327, 326, 340, 336, 0, 0, 313, 322, 305, 308, 306, 305, 310, 310, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{-59, -78, -82, -76, -23, -107, -37, -50,
+		-11, 20, 35, -42, -39, 31, 2, -22,
+		-9, 39, -32, 41, 52, -10, 28, -14,
+		25, 17, 20, 34, 26, 25, 15, 10,
+		13, 10, 17, 23, 17, 16, 0, 7,
+		14, 25, 24, 15, 8, 25, 20, 15,
+		19, 20, 11, 6, 7, 6, 20, 16,
+		-7, 2, -15, -12, -14, -15, -10, -10},
 	// PIECE_R
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 514, 508, 512, 483, 516, 512, 535, 529, 0, 0, 534, 508, 535, 546, 534, 541, 513, 539, 0, 0, 498, 514, 507, 512, 524, 506, 504, 494, 0, 0, 479, 484, 495, 492, 497, 475, 470, 473, 0, 0, 451, 444, 463, 458, 466, 450, 433, 449, 0, 0, 437, 451, 437, 454, 454, 444, 453, 433, 0, 0, 426, 441, 448, 453, 450, 436, 435, 426, 0, 0, 449, 455, 461, 484, 477, 461, 448, 447, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{35, 29, 33, 4, 37, 33, 56, 50,
+		55, 29, 56, 67, 55, 62, 34, 60,
+		19, 35, 28, 33, 45, 27, 25, 15,
+		0, 5, 16, 13, 18, -4, -9, -6,
+		-28, -35, -16, -21, -13, -29, -46, -30,
+		-42, -28, -42, -25, -25, -35, -26, -46,
+		-53, -38, -31, -26, -29, -43, -44, -53,
+		-30, -24, -18, 5, -2, -18, -31, -32},
 	// PIECE_Q
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 935, 930, 921, 825, 998, 953, 1017, 955, 0, 0, 943, 961, 989, 919, 949, 1005, 986, 953, 0, 0, 927, 972, 961, 989, 1001, 992, 972, 931, 0, 0, 930, 913, 951, 946, 954, 949, 916, 923, 0, 0, 915, 914, 927, 924, 928, 919, 909, 907, 0, 0, 899, 923, 916, 918, 913, 918, 913, 902, 0, 0, 893, 911, 929, 910, 914, 914, 908, 891, 0, 0, 890, 899, 898, 916, 898, 893, 895, 887, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{6, 1, -8, -104, 69, 24, 88, 26,
+		14, 32, 60, -10, 20, 76, 57, 24,
+		-2, 43, 32, 60, 72, 63, 43, 2,
+		1, -16, 22, 17, 25, 20, -13, -6,
+		-14, -15, -2, -5, -1, -10, -20, -22,
+		-30, -6, -13, -11, -16, -11, -16, -27,
+		-36, -18, 0, -19, -15, -15, -21, -38,
+		-39, -30, -31, -13, -31, -36, -34, -42},
 	// PIECE_K
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 60004, 60054, 60047, 59901, 59901, 60060, 60083, 59938, 0, 0, 59968, 60010, 60055, 60056, 60056, 60055, 60010, 60003, 0, 0, 59938, 60012, 59943, 60044, 59933, 60028, 60037, 59969, 0, 0, 59945, 60050, 60011, 59996, 59981, 60013, 60000, 59951, 0, 0, 59945, 59957, 59948, 59972, 59949, 59953, 59992, 59950, 0, 0, 59953, 59958, 59957, 59921, 59936, 59968, 59971, 59968, 0, 0, 59996, 60003, 59986, 59950, 59943, 59982, 60013, 60004, 0, 0, 60017, 60030, 59997, 59986, 60006, 59999, 60040, 60018, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{4, 54, 47, -99, -99, 60, 83, -62,
+		-32, 10, 55, 56, 56, 55, 10, 3,
+		-62, 12, -57, 44, -67, 28, 37, -31,
+		-55, 50, 11, -4, -19, 13, 0, -49,
+		-55, -43, -52, -28, -51, -47, -8, -50,
+		-47, -42, -43, -79, -64, -32, -29, -32,
+		-4, 3, -14, -50, -57, -18, 13, 4,
+		17, 30, -3, -14, 6, -1, 40, 18},
+}
+
+var golang_fish_init_done = false
+
+func golang_fish_init() {
+	if golang_fish_init_done {
+		return
+	}
+
+	golang_fish_init_done = true
+
+	// Pad tables and join piece and pst dictionaries.
+	for i := range pst {
+		result := IntArray{}
+
+		// Add 20 zeros
+		for j := 0; j < 20; j += 1 {
+			result = append(result, 0)
+		}
+
+		for j := 0; j < 64; j += 8 {
+
+			base := piece[i]
+
+			result = append(result,
+				0,
+				base+pst[i][j+0],
+				base+pst[i][j+1],
+				base+pst[i][j+2],
+				base+pst[i][j+3],
+				base+pst[i][j+4],
+				base+pst[i][j+5],
+				base+pst[i][j+6],
+				base+pst[i][j+7],
+				0,
+			)
+		}
+
+		// Add 20 zeros
+		for j := 0; j < 20; j += 1 {
+			result = append(result, 0)
+		}
+
+		pst[i] = result
+	}
 }
 
 const A1, H1, A8, H8 = 91, 98, 21, 28
 
 const N, E, S, W = -10, 1, 10, -1
 
+// Lists of possible moves for each piece type.
 var directions = PieceToIntArray{
 	// PIECE_P
 	{N, N + N, N + W, N + E},
@@ -58,14 +162,20 @@ var directions = PieceToIntArray{
 	{N, E, S, W, N + E, S + E, S + W, N + W},
 }
 
-const MATE_LOWER = 50710
-const MATE_UPPER = 69290
+/*
+Mate value must be greater than 8*queen + 2*(rook+knight+bishop).
+King value is set to twice this value such that if the opponent is
+8 queens up, but we got the king, we still exceed MATE_VALUE.
+When a MATE is detected, we'll set the score to MATE_UPPER - plies to get there.
+E.g. Mate in 3 will be MATE_UPPER - 6.
+*/
+var MATE_LOWER = piece[PIECE_K] - 10*piece[PIECE_Q]
+var MATE_UPPER = piece[PIECE_K] + 10*piece[PIECE_Q]
 
-const TABLE_SIZE = 1e7
-
-var SETTING_QS_LIMIT = 219
-var SETTING_EVAL_ROUGHNESS = 13
-var SETTING_MAX_DEPTH = 50
+// Constants for tuning search
+const QS = 40             // 0..300
+const QS_A = 140          // 0..300
+const EVAL_ROUGHNESS = 15 //0..50
 
 type Position struct {
 	board  Board
@@ -187,6 +297,14 @@ func max(x, y int) int {
 		return x
 	}
 	return y
+}
+
+// iif returns trueValue if condition is true, otherwise falseValue
+func iif[T any](condition bool, trueValue, falseValue T) T {
+	if condition {
+		return trueValue
+	}
+	return falseValue
 }
 
 func (self *Position) print() {
@@ -446,47 +564,68 @@ func NewSearcher() *Searcher {
 	}
 }
 
-func (self *Searcher) bound(pos *Position, gamma int, depth int, root bool) int {
+/*
+Let s* be the "true" score of the sub-tree we are searching.
+The method returns r, where:
+- if gamma >  s* then s* <= r < gamma  (A better upper bound).
+- if gamma <= s* then gamma <= r <= s* (A better lower bound).
+can_null = !root = Default TRUE.
+*/
+func (self *Searcher) bound(pos *Position, gamma int, depth int, can_null bool) int {
 	self.nodes += 1
+
+	/*
+		Depth <= 0 is QSearch. Here any position is searched as deeply as is needed for
+		calmness, and from this point on there is no difference in behaviour depending on
+		depth, so so there is no reason to keep different depths in the transposition table.
+	*/
 	depth = max(depth, 0)
 
+	/*
+		Sunfish is a king-capture engine, so we should always check if we
+		still have a king. Notice since this is the only termination check,
+		the remaining code has to be comfortable with being mated, stalemated
+		or able to capture the opponent king.
+	*/
 	if pos.score <= -MATE_LOWER {
 		return -MATE_UPPER
 	}
 
-	entry, entry_found := self.tp_score[PDR{*pos, depth, root}]
+	/*
+		Look in the table if we have already searched this position before.
+		We also need to be sure, that the stored search was over the same
+		nodes as the current search.
+	*/
+	entry, entry_found := self.tp_score[PDR{*pos, depth, can_null}]
 	if !entry_found {
 		entry = Entry{-MATE_UPPER, MATE_UPPER}
 	}
 
 	if entry.lower >= gamma {
-		if !root {
-			return entry.lower
-		}
-		if _, found := self.tp_move[*pos]; found {
-			return entry.lower
-		}
+		return entry.lower
 	}
 
 	if entry.upper < gamma {
 		return entry.upper
 	}
 
+	// TODO: Let's not repeat positions
+	// if can_null and depth > 0 and pos in self.history: return 0
+
+	// Generator of moves to search in order.
 	moves := func(yield func(sm ScoreMove) bool) {
-		if depth > 0 && !root {
-			if pos.board.contains(PIECE_R) ||
-				pos.board.contains(PIECE_B) ||
-				pos.board.contains(PIECE_N) ||
-				pos.board.contains(PIECE_Q) {
-				if yield(ScoreMove{
-					valid: false,
-					score: -self.bound(pos.nullmove(), 1-gamma, depth-3, false),
-				}) {
-					return
-				}
+		// First try not moving at all. We only do this if there is at least one major piece left on the board.
+		if depth > 2 && can_null && abs(pos.score) < 500 {
+			if yield(ScoreMove{
+				valid: false,
+				score: -self.bound(pos.nullmove(), 1-gamma, depth-3, false),
+			}) {
+				return
 			}
 		}
 
+		// For QSearch we have a different kind of null-move, namely we can just stop
+		// and not capture anything else.
 		if depth == 0 {
 			if yield(ScoreMove{
 				valid: false,
@@ -496,16 +635,40 @@ func (self *Searcher) bound(pos *Position, gamma int, depth int, root bool) int 
 			}
 		}
 
+		// Look for the strongest move from last time, the hash-move.
 		killer, killer_found := self.tp_move[*pos]
-		if killer_found && (depth > 0 || pos.value(killer) >= SETTING_QS_LIMIT) {
+
+		/*
+			If there isn't one, try to find one with a more shallow search.
+			This is known as Internal Iterative Deepening (IID). We set
+			can_null=True, since we want to make sure we actually find a move.
+		*/
+		if !killer_found && depth > 2 {
+			self.bound(pos, gamma, depth-3, false)
+			killer, killer_found = self.tp_move[*pos]
+		}
+
+		// If depth == 0 we only try moves with high intrinsic score (captures and
+		// promotions). Otherwise we do all moves. This is called quiescent search.
+		val_lower := QS - depth*QS_A
+
+		/*
+			Only play the move if it would be included at the current val-limit,
+			since otherwise we'd get search instability.
+			We will search it again in the main loop below, but the tp will fix
+			things for us.
+		*/
+		if killer_found && pos.value(killer) >= val_lower {
 			if yield(ScoreMove{
 				valid: true,
 				move:  killer,
-				score: -self.bound(pos.move(killer), 1-gamma, depth-1, false),
+				score: -self.bound(pos.move(killer), 1-gamma, depth-1, true),
 			}) {
 				return
 			}
 		}
+
+		// Then all the other moves
 
 		sorted_moves := make([]Move, 0, 64)
 		pos.gen_moves(func(m Move) bool {
@@ -519,71 +682,76 @@ func (self *Searcher) bound(pos *Position, gamma int, depth int, root bool) int 
 
 		for i := 0; i < len(sorted_moves); i++ {
 			move := sorted_moves[i]
-			if depth > 0 || pos.value(move) >= SETTING_QS_LIMIT {
+			val := pos.value(move)
+
+			// Quiescent search
+			if val < val_lower {
+				break
+			}
+
+			// If the new score is less than gamma, the opponent will for sure just
+			// stand pat, since ""pos.score + val < gamma === -(pos.score + val) >= 1-gamma""
+			// This is known as futility pruning.
+			if depth <= 1 && pos.score+val < gamma {
+				// Need special case for MATE, since it would normally be caught before standing pat.
 				if yield(ScoreMove{
 					valid: true,
 					move:  move,
-					score: -self.bound(pos.move(move), 1-gamma, depth-1, false),
+					score: pos.score + iif(val < MATE_LOWER, val, MATE_UPPER),
 				}) {
 					return
 				}
+				// We can also break, since we have ordered the moves by value, so it can't get any better than this.
+				break
+			}
+
+			if yield(ScoreMove{
+				valid: true,
+				move:  move,
+				score: -self.bound(pos.move(move), 1-gamma, depth-1, true),
+			}) {
+				return
 			}
 		}
 	}
 
+	// Run through the moves, shortcutting when possible.
 	best := -MATE_UPPER
 	moves(func(sm ScoreMove) bool {
 		best = max(best, sm.score)
 		if best >= gamma {
-			if len(self.tp_move) > TABLE_SIZE {
-				fmt.Printf("info string tp_move table clear\n")
-				self.tp_move = make(map[Position]Move)
-			}
-
+			// Save the move for pv construction and killer heuristic.
 			if sm.valid {
 				self.tp_move[*pos] = sm.move
-			} else {
-				delete(self.tp_move, *pos)
 			}
 
+			// break
 			return true
 		}
 
+		// keep returning results
 		return false
 	})
 
-	if best < gamma && best < 0 && depth > 0 {
-		all_is_dead := true
-		pos.gen_moves(func(m Move) bool {
-			pos_move := pos.move(m)
-			if !(pos_move.is_dead()) {
-				all_is_dead = false
-				return true
-			}
-			return false
-		})
-		if all_is_dead {
-			pos_nullmove := pos.nullmove()
-			in_check := pos_nullmove.is_dead()
-			if in_check {
-				best = -MATE_UPPER
-			} else {
-				best = 0
-			}
-		}
+	// Stalemate checking is a bit tricky...
+
+	// This is too expensive to test at depth == 0
+	if depth > 2 && best == -MATE_UPPER {
+		flipped := pos.nullmove()
+
+		// Hopefully this is already in the TT because of null-move.
+		in_check := self.bound(flipped, MATE_UPPER, 0, true) == MATE_UPPER
+		best = iif(in_check, -MATE_LOWER, 0)
 	}
 
-	if len(self.tp_score) > TABLE_SIZE {
-		fmt.Printf("info string tp_score table clear\n")
-		self.tp_score = make(map[PDR]Entry)
-	}
+	// Table part 2
 
 	if best >= gamma {
-		self.tp_score[PDR{*pos, depth, root}] = Entry{best, entry.upper}
+		self.tp_score[PDR{*pos, depth, can_null}] = Entry{best, entry.upper}
 	}
 
 	if best < gamma {
-		self.tp_score[PDR{*pos, depth, root}] = Entry{entry.lower, best}
+		self.tp_score[PDR{*pos, depth, can_null}] = Entry{entry.lower, best}
 	}
 
 	return best
