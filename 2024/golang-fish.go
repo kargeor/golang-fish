@@ -764,30 +764,41 @@ type SearchResult struct {
 	nodes int
 }
 
+// Iterative deepening MTD-bi search
 func (self *Searcher) search(pos *Position, yield func(r SearchResult) bool) {
 	self.nodes = 0
+	self.tp_score = make(map[PDR]Entry)
 
+	gamma := 0
+
+	// In finished games, we could potentially go far enough to cause a recursion
+	// limit exception. Hence we bound the ply. We also can't start at 0, since
+	// that's quiscent search, and we don't always play legal moves there.
 	for depth := 1; depth < 1000; depth++ {
-		lower, upper := -MATE_UPPER, MATE_UPPER
-		for lower < upper-SETTING_EVAL_ROUGHNESS {
-			gamma := (lower + upper + 1) / 2
-			score := self.bound(pos, gamma, depth, true)
+		// The inner loop is a binary search on the score of the position.
+		// Inv: lower <= score <= upper
+		// 'while lower != upper' would work, but it's too much effort to spend
+		// on what's probably not going to change the move played.
+		lower, upper := -MATE_LOWER, MATE_LOWER
+
+		for lower < upper-EVAL_ROUGHNESS {
+			score := self.bound(pos, gamma, depth, false)
 			if score >= gamma {
 				lower = score
 			} else {
 				upper = score
 			}
-		}
 
-		self.bound(pos, lower, depth, true)
+			if yield(SearchResult{
+				depth: depth,
+				move:  self.tp_move[*pos],
+				score: self.tp_score[PDR{*pos, depth, true}].lower,
+				nodes: self.nodes,
+			}) {
+				return
+			}
 
-		if yield(SearchResult{
-			depth: depth,
-			move:  self.tp_move[*pos],
-			score: self.tp_score[PDR{*pos, depth, true}].lower,
-			nodes: self.nodes,
-		}) {
-			return
+			gamma = (lower + upper + 1) / 2
 		}
 	}
 }

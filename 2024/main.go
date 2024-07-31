@@ -65,6 +65,8 @@ func parseFEN(fen string) *Position {
 }
 
 func main() {
+	golang_fish_init()
+
 	interactiveFlagPtr := flag.Bool("i", false, "interactive mode (default is uci)")
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
@@ -166,9 +168,9 @@ func main() {
 			case strings.HasPrefix(command, "uci"):
 				fmt.Printf("id name GoLangFish\n")
 				fmt.Printf("id author kargeor & Sunfish Contributors\n")
-				fmt.Printf("option name SETTING_MAX_DEPTH type spin default %d min 1 max 9999\n", SETTING_MAX_DEPTH)
-				fmt.Printf("option name SETTING_QS_LIMIT type spin default %d min 1 max 9999\n", SETTING_QS_LIMIT)
-				fmt.Printf("option name SETTING_EVAL_ROUGHNESS type spin default %d min 1 max 9999\n", SETTING_EVAL_ROUGHNESS)
+				// fmt.Printf("option name SETTING_MAX_DEPTH type spin default %d min 1 max 9999\n", SETTING_MAX_DEPTH)
+				// fmt.Printf("option name SETTING_QS_LIMIT type spin default %d min 1 max 9999\n", SETTING_QS_LIMIT)
+				// fmt.Printf("option name SETTING_EVAL_ROUGHNESS type spin default %d min 1 max 9999\n", SETTING_EVAL_ROUGHNESS)
 				fmt.Printf("uciok\n")
 			case strings.HasPrefix(command, "setoption"):
 				// TODO......
@@ -242,7 +244,7 @@ func main() {
 
 					fmt.Printf("info depth %d score cp %d nodes %d time %d pv %s\n", r.depth, r.score, r.nodes, elapsed_ms, pv)
 					bestResult = r
-					return r.depth >= SETTING_MAX_DEPTH || elapsed_ms > int64(time_left_msec)
+					return /*r.depth >= SETTING_MAX_DEPTH ||*/ elapsed_ms > int64(time_left_msec)
 				})
 
 				if white_turn {
