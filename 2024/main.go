@@ -15,6 +15,7 @@ import (
 
 var digit = regexp.MustCompile(`\d`)
 var slash = regexp.MustCompile(`/`)
+var debugLevel = 0
 
 func parseFEN(fen string) *Position {
 	parts := strings.Split(fen, " ")
@@ -88,6 +89,8 @@ func main() {
 	pos := parseFEN(FEN_INITIAL)
 
 	if *interactiveFlagPtr {
+		debugLevel = 1
+
 		for true {
 			pos.print()
 
@@ -117,6 +120,7 @@ func main() {
 			})
 
 			if !valid {
+				debug("Move not valid, try again")
 				continue
 			}
 
@@ -242,7 +246,7 @@ func main() {
 						pv = pv.rotate()
 					}
 
-					fmt.Printf("info depth %d score cp %d nodes %d time %d pv %s\n", r.depth, r.score, r.nodes, elapsed_ms, pv)
+					fmt.Printf("info depth=%d score=%d gamma=%d time=%d pv=%s\n", r.depth, r.score, r.gamma, elapsed_ms, pv)
 					bestResult = r
 					return /*r.depth >= SETTING_MAX_DEPTH ||*/ elapsed_ms > int64(time_left_msec)
 				})
@@ -254,5 +258,11 @@ func main() {
 				}
 			}
 		}
+	}
+}
+
+func debug(format string, args ...any) {
+	if debugLevel > 0 {
+		fmt.Printf(format+"\n", args...)
 	}
 }

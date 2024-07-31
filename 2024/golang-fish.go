@@ -759,14 +759,15 @@ func (self *Searcher) bound(pos *Position, gamma int, depth int, can_null bool) 
 
 type SearchResult struct {
 	depth int
-	move  Move
+	gamma int
 	score int
-	nodes int
+	move  Move
 }
 
 // Iterative deepening MTD-bi search
 func (self *Searcher) search(pos *Position, yield func(r SearchResult) bool) {
 	self.nodes = 0
+	// self.history = set(history)
 	self.tp_score = make(map[PDR]Entry)
 
 	gamma := 0
@@ -791,9 +792,9 @@ func (self *Searcher) search(pos *Position, yield func(r SearchResult) bool) {
 
 			if yield(SearchResult{
 				depth: depth,
+				gamma: gamma,
+				score: score,
 				move:  self.tp_move[*pos],
-				score: self.tp_score[PDR{*pos, depth, true}].lower,
-				nodes: self.nodes,
 			}) {
 				return
 			}
@@ -821,6 +822,7 @@ func (m Move) rotate() Move {
 
 func parseMove(str string) (Move, bool) {
 	if len(str) < 4 {
+		debug("parseMove: len must be 4+")
 		return Move{}, false
 	}
 
@@ -831,6 +833,7 @@ func parseMove(str string) (Move, bool) {
 	m3 := int(tbytes[3] - '1')
 
 	if m0 < 0 || m0 > 7 || m1 < 0 || m1 > 7 || m2 < 0 || m2 > 7 || m3 < 0 || m3 > 7 {
+		debug("parseMove: bad number")
 		return Move{}, false
 	}
 
