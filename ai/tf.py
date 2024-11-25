@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import keras
 import chess
 
 
@@ -34,5 +35,22 @@ def board_to_array(board):
             piece = board.piece_at(square)
             if piece is not None: array[rank, file, :] = piece_to_array(piece)
     return array
+
+
+
+
+model_from = keras.models.load_model("model_from.keras")
+
+board = chess.Board()
+
+
+board_array = board_to_array(board).reshape(1, 8, 8, 12)
+model_from.predict(board_array)
+
+
+
+
+
+
 
 
