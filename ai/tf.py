@@ -107,21 +107,46 @@ def main():
 
 
 def uci_loop():
+    global board
     while True:
         line = input()
         if line.startswith('uci'):
-            print('uciok')
-        elif line.startswith('id'):
-            print("id name George One")
+            print("id name GeorgeOne")
             print("id author kargeor")
-            print("id version 1.0")
+            print('uciok')
+        elif line.startswith('isready'):
+            print('readyok')
         elif line.startswith('position'):
             # Parse the position and set up the board
-            pass
+            parts = line.split()
+            if parts[1] == 'startpos':
+                board = chess.Board()
+            elif parts[1] == 'fen':
+                fen_string = ' '.join(parts[2:])
+                board = chess.Board(fen=fen_string)
+            else:
+                # Parse move sequence and apply to the board
+                for move_str in parts[2:]:
+                    move = chess.Move.from_uci(move_str)
+                    board.push(move)
         elif line.startswith('go'):
-            # Start the search and print the best move
-            best_move, _ = search(board, depth=4)  # Adjust depth as needed
-            print(f'bestmove {best_move}')
+            # Play
+            if board.turn == chess.BLACK: print("Error: Engine only plays as White.")
+
+            board_array = board_to_array(board).reshape(1, 8, 8, 12)
+            pred_from = model_from.predict(board_array).reshape(64)
+            pred_to = model_to.predict(board_array).reshape(64)
+
+            possible_moves = []
+            for m in board.legal_moves:
+                i = m.from_square
+                j = m.to_square
+                score = pred_from[i] * pred_to[j]
+                possible_moves.append( (i, j, score, m) )
+
+            possible_moves = sorted(possible_moves, key=lambda x: x[2])[::-1]
+            
+            print(f'bestmove {possible_moves[0][3]}')
         elif line.startswith('quit'):
             break
 
