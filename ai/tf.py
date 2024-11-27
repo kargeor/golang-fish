@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import keras
 import chess
+import sys
 
 
 
@@ -127,12 +128,19 @@ def uci_loop():
     global board
     while True:
         line = input()
-        if line.startswith('uci'):
+        if line.startswith('ucinewgame'):
+            board = chess.Board()
+        elif line.startswith('uci'):
             print("id name GeorgeOne")
             print("id author kargeor")
             print('uciok')
         elif line.startswith('isready'):
             print('readyok')
+        elif line.startswith('position startpos'):
+            board = chess.Board()
+            for move_str in line.split():
+                if move_str == "position" or move_str == "startpos" or move_str == "moves": continue
+                board.push(chess.Move.from_uci(move_str))
         elif line.startswith('position'):
             # Parse the position and set up the board
             parts = line.split()
@@ -151,8 +159,8 @@ def uci_loop():
             if board.turn == chess.BLACK: print("Error: Engine only plays as White.")
 
             board_array = board_to_array(board).reshape(1, 8, 8, 12)
-            pred_from = model_from.predict(board_array).reshape(64)
-            pred_to = model_to.predict(board_array).reshape(64)
+            pred_from = model_from.predict(board_array, verbose=0).reshape(64)
+            pred_to = model_to.predict(board_array, verbose=0).reshape(64)
 
             possible_moves = []
             for m in board.legal_moves:
@@ -168,6 +176,9 @@ def uci_loop():
             break
 
 if __name__ == '__main__':
-    uci_loop()
+    if len(sys.argv) > 1 and sys.argv[1] == "uci":
+        uci_loop()
+    else:
+        main()
 
 

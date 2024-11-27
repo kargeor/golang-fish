@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+./tf.py uci 2>/dev/null
+
