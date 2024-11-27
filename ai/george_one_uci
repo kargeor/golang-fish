@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
 
-./tf.py uci 2>/dev/null
+# for testing:
+###/opt/homebrew/bin/socat - tcp:localhost:55333
+
+
+
+~/.pyenv/shims/python tf.py uci 2>/dev/null
 

@@ -148,7 +148,14 @@ def uci_loop():
                 board = chess.Board()
             elif parts[1] == 'fen':
                 fen_string = ' '.join(parts[2:])
+                fen_string = fen_string.split("moves")[0].strip()
                 board = chess.Board(fen=fen_string)
+                fen_string = ' '.join(parts[2:])
+                if "moves" in fen_string:
+                    moves = fen_string.split("moves")[1].strip()
+                    for move_str in moves.split():
+                        move = chess.Move.from_uci(move_str)
+                        board.push(move)
             else:
                 # Parse move sequence and apply to the board
                 for move_str in parts[2:]:
@@ -171,6 +178,7 @@ def uci_loop():
 
             possible_moves = sorted(possible_moves, key=lambda x: x[2])[::-1]
             
+            print(f'info pv {possible_moves[0][3]}')
             print(f'bestmove {possible_moves[0][3]}')
         elif line.startswith('quit'):
             break
