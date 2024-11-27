@@ -47,10 +47,24 @@ model_to = keras.models.load_model("model_to.keras")
 
 board = chess.Board()
 
+
+def print_board(board):
+    ranks = range(8, 0, -1)
+    files = 'abcdefgh'
+    
+    board_str = str(board)
+    board_rows = board_str.split('\n')
+    
+    print("  " + " ".join(files))
+    for rank, row in zip(ranks, board_rows):
+        print(f"{rank} {row} {rank}")
+    print("  " + " ".join(files))
+
+
 def main():
     while True:
         print()
-        print(board)
+        print_board(board)
         print()
 
         if board.is_game_over():
@@ -82,7 +96,7 @@ def main():
         board.push(possible_moves[0][3])
 
         print()
-        print(board)
+        print_board(board)
         print()
 
         while True:
@@ -103,6 +117,9 @@ def main():
 
             except chess.InvalidMoveError as e:
                 print(f"Invalid move input: {e}")
+                continue
+            except chess.IllegalMoveError as e:
+                print(f"IllegalMoveError: {e}")
                 continue
 
 
