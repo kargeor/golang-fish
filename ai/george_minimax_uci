@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+
+~/.pyenv/shims/python minimax.py
+
